@@ -33,12 +33,6 @@ let plugins = [
     filename: 'index.html',
     excludeChunks: ['test']
   }),
-  new HtmlWebpackPlugin({
-    template: './public/test.html',
-    filename: 'test/index.html',
-    excludeChunks: ['index']
-  }),
-  // setup CSS extraction plugin
   new MiniCssExtractPlugin({
     filename: '[hash].[name].css',
     chunkFilename: '[hash].[id].css',
@@ -66,10 +60,6 @@ let rules = [
   },
   {
     test: /\/IndexPage\.jsx$/,
-    loader: 'react-hot-loader-loader'
-  },
-  {
-    test: /\/TestPage\.jsx$/,
     loader: 'react-hot-loader-loader'
   },
   {
@@ -139,8 +129,7 @@ let config = {
   devtool: isProduction ? '' : 'cheap-module-inline-source-map',
   mode: isDevelopment ? 'development' : 'production',
   entry: {
-    index: ['@babel/polyfill', './src/index.jsx'],
-    test: ['@babel/polyfill', './src/test.jsx']
+    index: ['@babel/polyfill', './src/index.jsx']
   },
   output: {
     filename: '[name].[hash:8].js',

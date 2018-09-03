@@ -41,7 +41,7 @@ class IndexPage extends React.Component {
           ? <p>Human touch has been detected</p>
           : <p>No human touch has been detected.</p>}
         <HowToComponent/>
-        <div><a href='/test'>click me hard</a></div>
+        <div><a href='/cube'>click me hard</a></div>
       </section>
     );
   }

@@ -3,6 +3,7 @@ import {BrowserRouter, Route, Switch} from 'react-router-dom';
 import {hot} from 'react-hot-loader';
 import IndexPage from 'pages/IndexPage';
 import NotFoundPage from 'pages/NotFoundPage';
+import Cube from "../components/samples/cube/Cube";
 
 class IndexRoutes extends React.Component {
   constructor(props) {
@@ -16,6 +17,7 @@ class IndexRoutes extends React.Component {
       <BrowserRouter>
         <Switch>
           <Route exact path="/" component={IndexPage}/>
+          <Route path="/cube/" component={Cube}/>
           <Route component={NotFoundPage}/>
         </Switch>
       </BrowserRouter>
