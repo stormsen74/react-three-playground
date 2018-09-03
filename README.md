@@ -1,23 +1,6 @@
-# React boilperplate
+# React-Three-Playground
 
-- [React](https://reactjs.org/) v16.3.2
-- [Redux](https://redux.js.org/) v4.0.0
 
-## Download / Clone
-
-Clone the repo using Git:
-
-```bash
-git clone git@source.dmdr.io:demodern-hh/web-react-boilerplate.git
-```
-
-## Quick Overview
-
-Use [nvm](https://github.com/creationix/nvm) to manage your node.js versions, please.
-
-This boilerplate uses [node](https://nodejs.org/en/) 8.10.0 LTS version.
-
-*If you have any questions please don't hesitate to ask someone*
 
 ## Installation
 
