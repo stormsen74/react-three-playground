@@ -1,8 +1,13 @@
 import React from 'react';
-import * as THREE from 'three';
-import './Cube.scss'
 import connect from "react-redux/es/connect/connect";
+import * as THREE from 'three';
 import OrbitControls from "../../../webgl/three/controls/OrbitControls";
+import '../Scene.scss'
+
+import 'gsap/TweenMax';
+
+import CloseIcon from 'core/icons/close.inline.svg';
+import NavIcon from "../../../core/icons/navi.inline.svg";
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -15,12 +20,13 @@ class Cube extends React.Component {
     this.draw = this.draw.bind(this);
     this.onResize = this.onResize.bind(this);
 
-    this.orbitControls = null;
   }
 
   componentDidMount() {
     this.initThree();
+    requestAnimationFrame(this.draw);
 
+    TweenMax.to(this.canvasWrapper, .5, {delay: .5, opacity: 1, ease: Cubic.easeIn})
 
     window.addEventListener('resize', this.onResize, true);
     this.onResize();
@@ -38,23 +44,13 @@ class Cube extends React.Component {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
 
-
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(VR_BG_COLOR);
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
-
     this.camera.position.set(0, 0, 0);
-    // this.scene.add(this.camera);
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
-    this.controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-    this.controls.dampingFactor = 0.25;
-    this.controls.screenSpacePanning = false;
-    this.controls.minDistance = 10;
-    this.controls.maxDistance = 100;
-    this.controls.maxPolarAngle = Math.PI / 2;
+    this.initControls();
 
     let geometry = new THREE.BoxGeometry(1, 1, 1);
     let material = new THREE.MeshNormalMaterial();
@@ -63,7 +59,6 @@ class Cube extends React.Component {
     this.scene.add(this.cube);
 
 
-    requestAnimationFrame(this.draw);
   }
 
   onResize() {
@@ -73,46 +68,44 @@ class Cube extends React.Component {
   }
 
 
-  initOrbitControls() {
-    this.orbitControls = new OrbitControls(this.camera, this.canvas);
-    this.orbitControls.enableDamping = true;
-    this.orbitControls.dampingFactor = 0.25;
-    this.orbitControls.enableZoom = true;
-    // this.orbitControls.autoRotate = true;
-    // this.orbitControls.enableZoom = false;
-    // this.orbitControls.enablePan = false;
-    // this.orbitControls.target.set(0, 0, 0);
-    // this.orbitControls.rotateUp(-HALF_PI);
-    // this.orbitControls.update();
-    // this.orbitControls.enabled = true;
-
-    console.log(this.orbitControls)
+  initControls() {
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.enablePan = false;
+    this.controls.dampingFactor = 0.15;
+    this.controls.minDistance = 5;
+    this.controls.maxDistance = 100;
+    this.controls.maxPolarAngle = Math.PI / 2;
   }
 
   update() {
-    // this.cube.rotation.x += .03;
-    // this.cube.rotation.y += .03;
+    this.cube.rotation.x += .03;
+    this.cube.rotation.y += .03;
 
-    this.orbitControls.update();
+    this.controls.update();
   }
 
 
   draw() {
 
-    // this.update();
-
-    this.controls.update();
-
-    this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.draw);
+
+    this.update();
+    this.renderer.render(this.scene, this.camera);
   }
 
 
   render() {
     return (
-      <div className={'canvas-wrapper'} id={'canvas-wrapper'}>
-        <canvas ref={ref => this.canvas = ref}/>
+      <div>
+        <div className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}>
+          <canvas ref={ref => this.canvas = ref}/>
+        </div>
+        <a href={'/'}>
+          <CloseIcon fill={'#ffffff'} className="close-icon"/>
+        </a>
       </div>
+
     );
   }
 }

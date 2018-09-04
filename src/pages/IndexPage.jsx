@@ -3,6 +3,7 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {resize, initTouchDetection} from 'actions/uiActions';
 import HowToComponent from 'components/howToComponent/HowToComponent';
+import PreviewIcon from "../components/previewIconComponent/PreviewIconComponent";
 
 class IndexPage extends React.Component {
   constructor(props) {
@@ -41,7 +42,7 @@ class IndexPage extends React.Component {
           ? <p>Human touch has been detected</p>
           : <p>No human touch has been detected.</p>}
         <HowToComponent/>
-        <div><a href='/cube'>click me hard</a></div>
+        <PreviewIcon title={'Cube'} route={'/cube'}/>
       </section>
     );
   }

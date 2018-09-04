@@ -145,7 +145,10 @@ let config = {
   },
   resolve: {
     extensions: ['.js', '.jsx'],
-    modules: [path.resolve(__dirname, 'src'), 'node_modules']
+    modules: [path.resolve(__dirname, 'src'), 'node_modules_private', 'node_modules'],
+    alias: {
+      webworkify: 'webworkify-webpack-dropin',
+    }
   },
   devServer: {
     contentBase: path.join(__dirname, 'public'),
