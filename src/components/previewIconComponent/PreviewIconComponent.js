@@ -15,9 +15,11 @@ class PreviewIcon extends React.Component {
 
 
     let pop = (
-      <a href={route}>
-        <div className={'title'}>{title}</div>
-      </a>
+      <div className={'pop'}>
+        <a href={route}>
+          <div className={'title'}>{title}</div>
+        </a>
+      </div>
     )
 
 

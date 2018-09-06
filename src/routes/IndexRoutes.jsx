@@ -17,7 +17,7 @@ class IndexRoutes extends React.Component {
       <BrowserRouter>
         <Switch>
           <Route exact path="/" component={IndexPage}/>
-          <Route path="/cube/" component={Cube}/>
+          <Route path="/cube" component={Cube}/>
           <Route component={NotFoundPage}/>
         </Switch>
       </BrowserRouter>

@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {resize, initTouchDetection} from 'actions/uiActions';
 import HowToComponent from 'components/howToComponent/HowToComponent';
 import PreviewIcon from "../components/previewIconComponent/PreviewIconComponent";
+import {samples} from "../components/samples/config";
 
 class IndexPage extends React.Component {
   constructor(props) {
@@ -34,15 +35,16 @@ class IndexPage extends React.Component {
   render() {
     const {width, height, humanTouch} = this.props;
 
+    const sampleList = samples.map((item, index) =>
+      <PreviewIcon title={item.title} route={item.route} key={index}/>
+    );
+
     return (
       <section>
-        <h1>IndexPage</h1>
-        <p>Current browser size in pixel: {width}/{height}</p>
-        {humanTouch
-          ? <p>Human touch has been detected</p>
-          : <p>No human touch has been detected.</p>}
-        <HowToComponent/>
-        <PreviewIcon title={'Cube'} route={'/cube'}/>
+        <div>
+          <h2 style={{margin: '5px'}}>Playground</h2>
+          {sampleList}
+        </div>
       </section>
     );
   }
