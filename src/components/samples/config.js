@@ -9,4 +9,4 @@ export const samples = [
     description: 'Here some other description text ...',
     route: '/cube'
   }
-]
+];

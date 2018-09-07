@@ -1,13 +1,10 @@
 import React from 'react';
 import connect from "react-redux/es/connect/connect";
 import * as THREE from 'three';
-import OrbitControls from "../../../webgl/three/controls/OrbitControls";
-import '../Scene.scss'
-
 import 'gsap/TweenMax';
-
+import OrbitControls from "../../../webgl/three/controls/OrbitControls";
 import CloseIcon from 'core/icons/close.inline.svg';
-import NavIcon from "../../../core/icons/navi.inline.svg";
+import '../Scene.scss'
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -26,7 +23,8 @@ class Cube extends React.Component {
     this.initThree();
     requestAnimationFrame(this.draw);
 
-    TweenMax.to(this.canvasWrapper, .5, {delay: .5, opacity: 1, ease: Cubic.easeIn})
+
+    TweenMax.to(this.canvasWrapper, .5, {delay: .5, opacity: 1, ease: Cubic.easeIn});
 
     window.addEventListener('resize', this.onResize, true);
     this.onResize();
@@ -57,8 +55,6 @@ class Cube extends React.Component {
     this.cube = new THREE.Mesh(geometry, material);
     this.cube.position.z = 0;
     this.scene.add(this.cube);
-
-
   }
 
   onResize() {
@@ -111,10 +107,7 @@ class Cube extends React.Component {
 }
 
 function mapStateToProps(state) {
-  return {
-    width: state.ui.width,
-    height: state.ui.height,
-  };
+  return {};
 }
 
 export default connect(mapStateToProps, {})(Cube);

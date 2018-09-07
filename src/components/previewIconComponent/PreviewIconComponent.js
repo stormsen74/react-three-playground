@@ -7,21 +7,23 @@ class PreviewIcon extends React.Component {
 
   constructor(props) {
     super(props);
+
+    this.handleClick = this.handleClick.bind(this)
   }
+
+  handleClick = (e) => {
+    this.props.history.push(this.props.route)
+  };
 
 
   render() {
-    const {title, route} = this.props;
-
+    const {title} = this.props;
 
     let pop = (
-      <div className={'pop'}>
-        <a href={route}>
-          <div className={'title'}>{title}</div>
-        </a>
+      <div className={'pop'} onClick={this.handleClick}>
+        <div className={'title'}>{title}</div>
       </div>
-    )
-
+    );
 
     return (
       <React.Fragment>
