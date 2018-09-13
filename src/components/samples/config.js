@@ -5,8 +5,8 @@ export const samples = [
     route: '/cube'
   },
   {
-    title: 'Three',
+    title: 'Hafen',
     description: 'Here some other description text ...',
-    route: '/cube'
+    route: '/hafen-map'
   }
 ];

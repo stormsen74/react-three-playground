@@ -21,6 +21,7 @@
   "author": "demodern",
   "license": "MIT",
   "dependencies": {
+    "pixi.js": "^4.8.2",
     "prop-types": "15.6.1",
     "react": "16.3.2",
     "react-dom": "16.3.2",
