@@ -18,16 +18,18 @@ class HafenMap extends React.Component {
     this.onResize = this.onResize.bind(this);
     this.loadReady = this.loadReady.bind(this);
 
-    // let lat0 = 53.5469;
-    // let lat1 = 53.5231;
-    // let lng0 = 9.9418;
-    // let lng1 = 10.0135;
-
     this.GeoBounds = {
       minLong: 9.9418,
       maxLong: 10.0135,
       minLat: 53.5469,
       maxLat: 53.5231
+    };
+
+    this.mapData = {
+      size: {
+        width: 1920,
+        height: 1083
+      }
     }
 
   }
@@ -59,39 +61,35 @@ class HafenMap extends React.Component {
 
 
   getXY(lat, long) {
-    let pos = [0, 0]
-    pos[0] = (long - this.GeoBounds.minLong) / (this.GeoBounds.maxLong - this.GeoBounds.minLong) * 1920;
-    pos[1] = (lat - this.GeoBounds.minLat) / (this.GeoBounds.maxLat - this.GeoBounds.minLat) * 1083;
-    return pos;
+    return [
+      (long - this.GeoBounds.minLong) / (this.GeoBounds.maxLong - this.GeoBounds.minLong) * this.mapData.size.width,
+      (lat - this.GeoBounds.minLat) / (this.GeoBounds.maxLat - this.GeoBounds.minLat) * this.mapData.size.height
+    ];
   }
 
 
   loadReady() {
-    console.log('loadReady')
+    console.log('loadReady');
 
     this.initStage();
 
 
-    let sprite = new PIXI.Sprite(
-      PIXI.loader.resources[map].texture
-    );
+    let sprite = new PIXI.Sprite(PIXI.loader.resources[map].texture);
     this.app.stage.addChild(sprite);
 
 
-    let rectangle = new PIXI.Graphics();
-    rectangle.lineStyle(1, 0xFF3300, 1);
-    rectangle.beginFill(0x66CCFF);
-    rectangle.drawRect(-20, -10, 40, 20);
-    rectangle.endFill();
+    let point = new PIXI.Graphics();
+    point.lineStyle(1, 0x025bff, 1);
+    point.beginFill(0xff4f02);
+    point.drawCircle(0, 0, 5);
+    point.endFill();
+    this.app.stage.addChild(point);
 
-    // 53.5412987,9.9878186
-    let pos = this.getXY(53.538643, 9.971231);
-    console.log(pos)
 
-    rectangle.x = pos[0];
-    rectangle.y = pos[1];
+    let pos = this.getXY(53.542271, 9.967715);
+    point.x = pos[0];
+    point.y = pos[1];
 
-    this.app.stage.addChild(rectangle);
 
     this.show();
   }
@@ -107,11 +105,8 @@ class HafenMap extends React.Component {
       }
     );
 
+    this.app.view.id = 'pixi-app-view';
     this.canvasWrapper.appendChild(this.app.view);
-
-
-    const degToRad = 0.0174533;
-
 
   }
 
