@@ -2,14 +2,20 @@ import axios from 'axios';
 
 class VesselTrackerConnector {
 
-  constructor() {
-    console.log('init::VesselTrackerConnector')
+  constructor(_map) {
 
-    this.loadData();
+    this.mapReferenz = _map;
+
+
+    this.load = this.load.bind(this);
 
   }
 
-  loadData() {
+  load() {
+    this.loadData(this);
+  }
+
+  loadData(_this) {
     const url = 'https://api.vesseltracker.com/api/v1/vessels/userpolygon';
     axios.get(url, {
       responseType: 'json',
@@ -19,14 +25,28 @@ class VesselTrackerConnector {
       },
     }).then(function (response) {
       // handle success
-      console.log(response.data);
+      _this.parseData(response.data);
+
     }).catch(function (error) {
       // handle error
       console.log(error);
     }).then(function () {
-      // always executed
+      // if error debug!
     });
+  }
 
+
+  parseData(data) {
+    console.log('timeCreated', data['timeCreated'])
+    console.log('numVessels', data['numVessels'])
+    console.log(data['vessels'][0])
+    console.log(data['vessels'][0]['aisStatic'])
+    // console.log(data['vessels'][0]['aisPosition']['lon'])
+
+    this.mapReferenz.onUpdateTrackerData([
+      data['vessels'][0]['aisPosition']['lat'],
+      data['vessels'][0]['aisPosition']['lon']
+    ]);
 
   }
 

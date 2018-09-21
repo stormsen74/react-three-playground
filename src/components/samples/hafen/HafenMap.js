@@ -3,6 +3,7 @@ import connect from "react-redux/es/connect/connect";
 import 'gsap/TweenMax';
 import CloseIcon from 'core/icons/close.inline.svg';
 import map from 'components/samples/hafen/images/map.png';
+import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRange.png';
 import * as PIXI from 'pixi.js'
 
 import '../Scene.scss'
@@ -20,16 +21,16 @@ class HafenMap extends React.Component {
     this.loadReady = this.loadReady.bind(this);
 
     this.GeoBounds = {
-      minLong: 9.9418,
-      maxLong: 10.0135,
-      minLat: 53.5469,
-      maxLat: 53.5231
+      minLong: 9.7538,
+      maxLong: 10.0948,
+      minLat: 53.5743,
+      maxLat: 53.4605
     };
 
     this.mapData = {
       size: {
         width: 1920,
-        height: 1083
+        height: 1077
       }
     }
 
@@ -37,7 +38,7 @@ class HafenMap extends React.Component {
 
   componentDidMount() {
 
-    let vtc = new VesselTrackerConnector();
+    this.vtc = new VesselTrackerConnector(this);
 
 
     this.initialLoad();
@@ -46,6 +47,15 @@ class HafenMap extends React.Component {
 
     window.addEventListener('resize', this.onResize, true);
     this.onResize();
+  }
+
+
+  onUpdateTrackerData(geo) {
+    console.log(geo);
+    let pos = this.getXY(geo[0], geo[1]);
+    console.log(pos);
+    this.point.x = pos[0];
+    this.point.y = pos[1];
   }
 
 
@@ -59,7 +69,7 @@ class HafenMap extends React.Component {
 
 
   initialLoad() {
-    PIXI.loader.add(map).load(this.loadReady);
+    PIXI.loader.add(vesselTrackerRange).load(this.loadReady);
   }
 
 
@@ -77,31 +87,33 @@ class HafenMap extends React.Component {
     this.initStage();
 
 
-    let sprite = new PIXI.Sprite(PIXI.loader.resources[map].texture);
+    let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
     this.app.stage.addChild(sprite);
 
 
-    let point = new PIXI.Graphics();
-    point.lineStyle(1, 0x025bff, 1);
-    point.beginFill(0xff4f02);
-    point.drawCircle(0, 0, 5);
-    point.endFill();
-    this.app.stage.addChild(point);
+    this.point = new PIXI.Graphics();
+    this.point.lineStyle(1, 0x025bff, 1);
+    this.point.beginFill(0xff4f02);
+    this.point.drawCircle(0, 0, 5);
+    this.point.endFill();
+    this.app.stage.addChild(this.point);
 
 
-    let pos = this.getXY(53.54554, 9.965323333333334);
-    point.x = pos[0];
-    point.y = pos[1];
+    // let pos = this.getXY(53.544448333333335, 9.985446666666666);
+    // point.x = pos[0];
+    // point.y = pos[1];
 
 
     this.show();
+
+    this.vtc.load();
   }
 
 
   initStage() {
     this.app = new PIXI.Application({
-        width: 1920,
-        height: 1083,
+        width: this.mapData.size.width,
+        height: this.mapData.size.height,
         antialias: true,    // default: false
         transparent: false, // default: false
         resolution: 1       // default: 1
