@@ -6,6 +6,7 @@ import map from 'components/samples/hafen/images/map.png';
 import * as PIXI from 'pixi.js'
 
 import '../Scene.scss'
+import VesselTrackerConnector from "./VesselTrackerConnector";
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -35,6 +36,8 @@ class HafenMap extends React.Component {
   }
 
   componentDidMount() {
+
+    let vtc = new VesselTrackerConnector();
 
 
     this.initialLoad();
@@ -86,7 +89,7 @@ class HafenMap extends React.Component {
     this.app.stage.addChild(point);
 
 
-    let pos = this.getXY(53.542271, 9.967715);
+    let pos = this.getXY(53.54554, 9.965323333333334);
     point.x = pos[0];
     point.y = pos[1];
 
