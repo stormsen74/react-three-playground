@@ -21,6 +21,7 @@
   "author": "demodern",
   "license": "MIT",
   "dependencies": {
+    "array-sync": "^2.0.2",
     "axios": "^0.18.0",
     "pixi.js": "^4.8.2",
     "prop-types": "15.6.1",

@@ -34,30 +34,22 @@ class HafenMap extends React.Component {
       }
     }
 
+    this.timerData = {
+      timeStep: 60
+    }
+
   }
 
   componentDidMount() {
 
     this.vtc = new VesselTrackerConnector(this);
 
-
     this.initialLoad();
     // requestAnimationFrame(this.draw);
-
 
     window.addEventListener('resize', this.onResize, true);
     this.onResize();
   }
-
-
-  onUpdateTrackerData(geo) {
-    console.log(geo);
-    let pos = this.getXY(geo[0], geo[1]);
-    console.log(pos);
-    this.point.x = pos[0];
-    this.point.y = pos[1];
-  }
-
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.onResize, true);
@@ -71,44 +63,6 @@ class HafenMap extends React.Component {
   initialLoad() {
     PIXI.loader.add(vesselTrackerRange).load(this.loadReady);
   }
-
-
-  getXY(lat, long) {
-    return [
-      (long - this.GeoBounds.minLong) / (this.GeoBounds.maxLong - this.GeoBounds.minLong) * this.mapData.size.width,
-      (lat - this.GeoBounds.minLat) / (this.GeoBounds.maxLat - this.GeoBounds.minLat) * this.mapData.size.height
-    ];
-  }
-
-
-  loadReady() {
-    console.log('loadReady');
-
-    this.initStage();
-
-
-    let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
-    this.app.stage.addChild(sprite);
-
-
-    this.point = new PIXI.Graphics();
-    this.point.lineStyle(1, 0x025bff, 1);
-    this.point.beginFill(0xff4f02);
-    this.point.drawCircle(0, 0, 5);
-    this.point.endFill();
-    this.app.stage.addChild(this.point);
-
-
-    // let pos = this.getXY(53.544448333333335, 9.985446666666666);
-    // point.x = pos[0];
-    // point.y = pos[1];
-
-
-    this.show();
-
-    this.vtc.load();
-  }
-
 
   initStage() {
     this.app = new PIXI.Application({
@@ -124,6 +78,88 @@ class HafenMap extends React.Component {
     this.canvasWrapper.appendChild(this.app.view);
 
   }
+
+  loadReady() {
+    this.initStage();
+
+    let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
+    this.app.stage.addChild(sprite);
+
+    this.container = new PIXI.Container();
+    this.app.stage.addChild(this.container);
+
+    // let pos = this.getXY(53.544448333333335, 9.985446666666666);
+    // point.x = pos[0];
+    // point.y = pos[1];
+
+
+    this.show();
+
+    this.vtc.load();
+
+    this.startTimer();
+
+  }
+
+
+  startTimer() {
+    TweenMax.delayedCall(this.timerData.timeStep, this.stepTimer, null, this);
+  }
+
+  stepTimer() {
+    console.log('vtc-reqest');
+    this.vtc.load();
+    this.startTimer();
+  }
+
+  getColorByStatus(status) {
+    let color = 0x000000;
+    switch (status) {
+      case 'moored':
+        color = 0xff0000;
+        break;
+      case 'waiting':
+        color = 0x0000ff;
+        break;
+      case 'moving':
+        color = 0x00ff00;
+        break;
+    }
+    return color;
+  }
+
+  plotVessel(vesselData) {
+
+    let vessel = new PIXI.Graphics();
+    vessel.beginFill(this.getColorByStatus(vesselData.status));
+    // point.drawCircle(0, 0, 3);
+    vessel.drawPolygon([0, -5, 4, 5, -4, 5]);
+    vessel.endFill();
+    let pos = this.getXY(vesselData.aisPosition.lat, vesselData.aisPosition.lon);
+    vessel.x = pos[0];
+    vessel.y = pos[1];
+    vessel.rotation = vesselData.aisPosition.cog * 0.0174533; // rad to deg
+
+    this.container.addChild(vessel);
+  }
+
+  onUpdateTrackerData(vesselPool) {
+
+    this.container.removeChildren(0, this.container.children.length);
+
+    for (let i = 0; i < vesselPool.length; i++) {
+      this.plotVessel(vesselPool[i]);
+    }
+
+  }
+
+  getXY(lat, long) {
+    return [
+      (long - this.GeoBounds.minLong) / (this.GeoBounds.maxLong - this.GeoBounds.minLong) * this.mapData.size.width,
+      (lat - this.GeoBounds.minLat) / (this.GeoBounds.maxLat - this.GeoBounds.minLat) * this.mapData.size.height
+    ];
+  }
+
 
   onResize() {
   }
