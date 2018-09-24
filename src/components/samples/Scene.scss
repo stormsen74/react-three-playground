@@ -22,3 +22,35 @@ canvas {
   transform: scale(0.75);
   cursor: pointer;
 }
+
+.debug {
+  position: absolute;
+  background-color: rgba(75, 75, 75, 0.75);
+  right: 10px;
+  top: 10px;
+  width: 200px;
+  height: 200px;
+  transform: translateX(0) translateY(0%);
+  transition: all 1s $ease-out-strong 0.25s;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  color: #ffffff;
+
+  .circular-chart {
+    display: block;
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    right: 0px;
+    top: 0px;
+  }
+
+  .circle {
+    stroke: #0106c7;
+    fill: none;
+    stroke-width: 3px;
+    stroke-linecap: round;
+    animation: progress 1s ease-out forwards;
+  }
+}

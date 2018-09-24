@@ -43,15 +43,12 @@ class VesselTrackerConnector {
       aisPosition: {
         lat: vesselData['aisPosition']['lat'],
         lon: vesselData['aisPosition']['lon'],
-        // velocity
         sog: vesselData['aisPosition']['sog'],
-        // direction
-        hdg: vesselData['aisPosition']['hdg'],
-        // kurs
         cog: vesselData['aisPosition']['cog']
       },
       trackData: [
         {
+          status: vesselData['geoDetails']['status'],
           lat: vesselData['aisPosition']['lat'],
           lon: vesselData['aisPosition']['lon'],
           cog: vesselData['aisPosition']['cog']
@@ -84,31 +81,42 @@ class VesselTrackerConnector {
       });
 
       if (result[0]) {
-        if (result[0]['geoDetails']['status'] === 'moving') {
+        vesselPool[i]['status'] = result[0]['geoDetails']['status'];
+        vesselPool[i]['aisPosition']['lat'] = result[0]['aisPosition']['lat'];
+        vesselPool[i]['aisPosition']['lon'] = result[0]['aisPosition']['lon'];
+        vesselPool[i]['aisPosition']['sog'] = result[0]['aisPosition']['sog'];
+        vesselPool[i]['aisPosition']['cog'] = result[0]['aisPosition']['cog'];
+
+        // if (result[0]['geoDetails']['status'] === 'moving') {
           vesselPool[i]['trackData'].push(
             {
+              status: result[0]['geoDetails']['status'],
               lat: result[0]['aisPosition']['lat'],
               lon: result[0]['aisPosition']['lon'],
               cog: result[0]['aisPosition']['cog']
             }
           );
-        } else {
-          vesselPool[i]['trackData'].push(
-            {
-              lat: '=> noChange',
-              lon: '=> noChange',
-              cog: '=> noChange'
-            }
-          );
-        }
+        // }
+        // else {
+        //   vesselPool[i]['trackData'].push(
+        //     {
+        //       lat: '=> noChange',
+        //       lon: '=> noChange',
+        //       cog: '=> noChange'
+        //     }
+        //   );
+        // }
         // console.log('succsesfully update')
       } else {
         console.log('failed update');
+        vesselPool[i]['status'] = 'lost';
+
         vesselPool[i]['trackData'].push(
           {
-            lat: '=> lostTrack',
-            lon: '=> lostTrack',
-            cog: '=> lostTrack'
+            status: 'lost',
+            lat: 0,
+            lon: 0,
+            cog: 0
           }
         );
       }
@@ -131,7 +139,7 @@ class VesselTrackerConnector {
 
     }
 
-    console.log(vesselPool)
+    // console.log(vesselPool)
 
   }
 
@@ -149,13 +157,7 @@ class VesselTrackerConnector {
 
     this.updatePool(this.vesselPool, data);
 
-
-    this.dataVessel = [];
-    for (let i = 0; i < numVessels; i++) {
-      this.dataVessel[i] = this.createVesselData(data['vessels'][i]);
-    }
-
-    this.mapReferenz.onUpdateTrackerData(this.dataVessel);
+    this.mapReferenz.onUpdateTrackerData(this.vesselPool);
 
 
   }
