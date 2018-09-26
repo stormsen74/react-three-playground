@@ -5,8 +5,13 @@ export const samples = [
     route: '/cube'
   },
   {
-    title: 'Hafen',
+    title: 'TrackRecorder',
     description: 'Here some other description text ...',
     route: '/hafen-map'
+  },
+  {
+    title: 'TrackPlayer',
+    description: 'Here some other description text ...',
+    route: '/track-player'
   }
 ];

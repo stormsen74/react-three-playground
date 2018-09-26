@@ -40,6 +40,7 @@ class VesselTrackerConnector {
       mmsi: vesselData['aisStatic']['mmsi'],
       name: vesselData['aisStatic']['name'],
       status: vesselData['geoDetails']['status'],
+      hasMoved: vesselData['geoDetails']['status'] === 'moving' ? true : false,
       aisPosition: {
         lat: vesselData['aisPosition']['lat'],
         lon: vesselData['aisPosition']['lon'],
@@ -82,20 +83,21 @@ class VesselTrackerConnector {
 
       if (result[0]) {
         vesselPool[i]['status'] = result[0]['geoDetails']['status'];
+        if (!vesselPool[i]['hasMoved'] && result[0]['geoDetails']['status'] == 'moving') vesselPool[i]['hasMoved'] = true;
         vesselPool[i]['aisPosition']['lat'] = result[0]['aisPosition']['lat'];
         vesselPool[i]['aisPosition']['lon'] = result[0]['aisPosition']['lon'];
         vesselPool[i]['aisPosition']['sog'] = result[0]['aisPosition']['sog'];
         vesselPool[i]['aisPosition']['cog'] = result[0]['aisPosition']['cog'];
 
         // if (result[0]['geoDetails']['status'] === 'moving') {
-          vesselPool[i]['trackData'].push(
-            {
-              status: result[0]['geoDetails']['status'],
-              lat: result[0]['aisPosition']['lat'],
-              lon: result[0]['aisPosition']['lon'],
-              cog: result[0]['aisPosition']['cog']
-            }
-          );
+        vesselPool[i]['trackData'].push(
+          {
+            status: result[0]['geoDetails']['status'],
+            lat: result[0]['aisPosition']['lat'],
+            lon: result[0]['aisPosition']['lon'],
+            cog: result[0]['aisPosition']['cog']
+          }
+        );
         // }
         // else {
         //   vesselPool[i]['trackData'].push(

@@ -27,6 +27,8 @@ class HafenMap extends React.Component {
 
     this.state = {
       vesselPoolSize: 0,
+      movingVessels: 0,
+      movedVessels: 0,
       currentStep: 0
     }
 
@@ -176,7 +178,7 @@ class HafenMap extends React.Component {
 
     console.log(pathArray, vesselData)
 
-    if (vesselData.mmsi === 211513200) return
+    // if (vesselData.mmsi === 211513200) return
 
     let path = new PIXI.Graphics();
     this.pathGraphics.addChild(path);
@@ -212,7 +214,7 @@ class HafenMap extends React.Component {
 
   plotVessel(vesselData) {
 
-    if (vesselData.status === 'moored') return
+    if (!vesselData.hasMoved) return;
 
     let vessel = new PIXI.Graphics();
     vessel.beginFill(this.getColorByStatus(vesselData.status));
@@ -232,18 +234,28 @@ class HafenMap extends React.Component {
     // update Debug
     this.setState({vesselPoolSize: vesselPool.length});
 
-
     this.vesselGraphics.removeChildren(0, this.vesselGraphics.children.length);
     this.pathGraphics.removeChildren(0, this.pathGraphics.children.length);
     this.pointGraphics.removeChildren(0, this.pointGraphics.children.length);
 
+    let movingVessels = 0;
+    let movedVessels = 0;
+
     for (let i = 0; i < vesselPool.length; i++) {
       this.plotVessel(vesselPool[i]);
 
+      if (vesselPool[i]['hasMoved'] === true) {
+        movedVessels++
+      }
+
       if (vesselPool[i]['status'] === 'moving') {
         this.plotVesselPath(vesselPool[i]['trackData'], vesselPool[i])
+        movingVessels++;
       }
     }
+
+    this.setState({movingVessels: movingVessels});
+    this.setState({movedVessels: movedVessels});
 
 
   }
@@ -287,8 +299,10 @@ class HafenMap extends React.Component {
         <div className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}></div>
         <div className={'debug'}>
           {indicatorMarkup}
-          <div style={{position: 'absolute', top: '45px', right: '5px', width: '185px'}}>{'vesselPoolSize: ' + this.state.vesselPoolSize}</div>
-          <div style={{position: 'absolute', top: '65px', right: '5px', width: '185px'}}>{'currentStep: ' + this.state.currentStep}</div>
+          <div style={{position: 'absolute', top: '45px', right: '5px', width: '185px'}}>{'currentStep: ' + this.state.currentStep}</div>
+          <div style={{position: 'absolute', top: '65px', right: '5px', width: '185px'}}>{'vesselPoolSize: ' + this.state.vesselPoolSize}</div>
+          <div style={{position: 'absolute', top: '85px', right: '5px', width: '185px'}}>{'movingVessels: ' + this.state.movingVessels}</div>
+          <div style={{position: 'absolute', top: '105px', right: '5px', width: '185px'}}>{'movedVessels: ' + this.state.movedVessels}</div>
         </div>
         <a href={'/'}>
           <CloseIcon fill={'#000000'} className="close-icon"/>
