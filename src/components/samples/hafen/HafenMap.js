@@ -295,7 +295,7 @@ class HafenMap extends React.Component {
       </div>;
 
     return (
-      <div style={{position: 'absolute', width: '1920px', height: '1077px'}}>
+      <div style={{position: 'absolute', width: '100%', height: '100%', overflow:'hidden'}}>
         <div className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}></div>
         <div className={'debug'}>
           {indicatorMarkup}
