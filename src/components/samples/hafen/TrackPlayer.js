@@ -2,13 +2,15 @@ import React from 'react';
 import connect from "react-redux/es/connect/connect";
 import 'gsap/TweenMax';
 import CloseIcon from 'core/icons/close.inline.svg';
-import map from 'components/samples/hafen/images/map.png';
 import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRange.png';
 import * as PIXI from 'pixi.js'
 
 import '../Scene.scss'
 import VesselTrackerConnector from "./VesselTrackerConnector";
 import * as TrackData from "./TrackData";
+
+
+const trackData = require("./trackData/trackData.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -89,12 +91,43 @@ class TrackPlayer extends React.Component {
 
     this.show();
 
-    this.initVessel(TrackData.track_01);
-    this.initVessel(TrackData.track_02);
-    this.initVessel(TrackData.track_03);
-    this.initVessel(TrackData.track_04);
-    this.initVessel(TrackData.track_05)
+    // this.initVessel(TrackData.track_01);
+    // this.initVessel(TrackData.track_02);
+    // this.initVessel(TrackData.track_03);
+    // this.initVessel(TrackData.track_04);
+    // this.initVessel(TrackData.track_05)
 
+
+    this.parseTrackData(trackData);
+
+
+  }
+
+
+  parseTrackData(_trackData) {
+    let validCounter = 0;
+    let range = {
+      start: 4,
+      end: 5,
+      count: 0
+    }
+    for (let i = 0; i < _trackData.vesselPool.length; i++) {
+      if (_trackData.vesselPool[i]['hasMoved'] && _trackData.vesselPool[i]['status'] !== 'lost') {
+        validCounter++;
+        if (_trackData.vesselPool[i]['trackData'].length > 59) {
+          // if added later ... length <
+          if (range.count < range.end) {
+            if (range.count >= range.start) {
+              console.log(_trackData.vesselPool[i])
+              this.initVessel(_trackData.vesselPool[i]['trackData'])
+            }
+            range.count++;
+          }
+        }
+      }
+    }
+
+    console.log('valid vessels: ', validCounter)
   }
 
 
@@ -104,7 +137,7 @@ class TrackPlayer extends React.Component {
 
 
     let parsedTrack = [];
-    for (let i = 0; i < _trackData.length; i++) {
+    for (let i = 0; i < 59; i++) {
       let pos = this.getXY(_trackData[i].lat, _trackData[i].lon);
       parsedTrack[i] = {x: pos[0], y: pos[1], status: _trackData[i].status}
     }
@@ -129,7 +162,6 @@ class TrackPlayer extends React.Component {
         vessel.drawCircle(0, 0, 3);
         vessel.endFill();
       },
-      onUpdateScope: this
     });
   }
 

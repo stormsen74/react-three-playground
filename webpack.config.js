@@ -40,6 +40,10 @@ let plugins = [
 ];
 
 let rules = [
+  // {
+  //   test: /\.json$/,
+  //   loader: 'json-loader'
+  // },
   {
     // handle JS
     test: /\.(js|jsx)$/,
@@ -128,6 +132,9 @@ let rules = [
 let config = {
   devtool: isProduction ? '' : 'cheap-module-inline-source-map',
   mode: isDevelopment ? 'development' : 'production',
+  node: {
+    fs: 'empty'
+  },
   entry: {
     index: ['@babel/polyfill', './src/index.jsx']
   },

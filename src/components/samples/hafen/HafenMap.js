@@ -1,5 +1,6 @@
 import React from 'react';
 import connect from "react-redux/es/connect/connect";
+import {Button} from 'reactstrap';
 import 'gsap/TweenMax';
 import CloseIcon from 'core/icons/close.inline.svg';
 import map from 'components/samples/hafen/images/map.png';
@@ -7,6 +8,7 @@ import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRan
 import * as PIXI from 'pixi.js'
 
 import '../Scene.scss'
+import 'bootstrap/dist/css/bootstrap.css';
 import VesselTrackerConnector from "./VesselTrackerConnector";
 
 
@@ -19,6 +21,7 @@ class HafenMap extends React.Component {
     this.draw = this.draw.bind(this);
     this.onResize = this.onResize.bind(this);
     this.loadReady = this.loadReady.bind(this);
+    this.onClickSave = this.onClickSave.bind(this);
 
     this.strokeParams = {
       strokeLength: 100,
@@ -51,6 +54,10 @@ class HafenMap extends React.Component {
       currentStep: 0
     }
 
+  }
+
+  onClickSave() {
+    this.vtc.saveData();
   }
 
   componentDidMount() {
@@ -295,7 +302,7 @@ class HafenMap extends React.Component {
       </div>;
 
     return (
-      <div style={{position: 'absolute', width: '100%', height: '100%', overflow:'hidden'}}>
+      <div style={{position: 'absolute', width: '100%', height: '100%', overflow: 'hidden'}}>
         <div className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}></div>
         <div className={'debug'}>
           {indicatorMarkup}
@@ -303,6 +310,9 @@ class HafenMap extends React.Component {
           <div style={{position: 'absolute', top: '65px', right: '5px', width: '185px'}}>{'vesselPoolSize: ' + this.state.vesselPoolSize}</div>
           <div style={{position: 'absolute', top: '85px', right: '5px', width: '185px'}}>{'movingVessels: ' + this.state.movingVessels}</div>
           <div style={{position: 'absolute', top: '105px', right: '5px', width: '185px'}}>{'movedVessels: ' + this.state.movedVessels}</div>
+          <div style={{position: 'absolute', top: '140px', right: '5px', width: '185px'}}>
+            <Button onClick={() => this.onClickSave()} color="success">Save Data</Button>
+          </div>
         </div>
         <a href={'/'}>
           <CloseIcon fill={'#000000'} className="close-icon"/>

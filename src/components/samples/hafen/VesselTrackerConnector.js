@@ -1,4 +1,6 @@
 import axios from 'axios';
+import saveAs from 'file-saver';
+const FileSaver = require('file-saver');
 
 class VesselTrackerConnector {
 
@@ -52,6 +54,7 @@ class VesselTrackerConnector {
           status: vesselData['geoDetails']['status'],
           lat: vesselData['aisPosition']['lat'],
           lon: vesselData['aisPosition']['lon'],
+          sog: vesselData['aisPosition']['sog'],
           cog: vesselData['aisPosition']['cog']
         }
       ]
@@ -89,26 +92,15 @@ class VesselTrackerConnector {
         vesselPool[i]['aisPosition']['sog'] = result[0]['aisPosition']['sog'];
         vesselPool[i]['aisPosition']['cog'] = result[0]['aisPosition']['cog'];
 
-        // if (result[0]['geoDetails']['status'] === 'moving') {
         vesselPool[i]['trackData'].push(
           {
             status: result[0]['geoDetails']['status'],
             lat: result[0]['aisPosition']['lat'],
             lon: result[0]['aisPosition']['lon'],
+            sog: result[0]['aisPosition']['sog'],
             cog: result[0]['aisPosition']['cog']
           }
         );
-        // }
-        // else {
-        //   vesselPool[i]['trackData'].push(
-        //     {
-        //       lat: '=> noChange',
-        //       lon: '=> noChange',
-        //       cog: '=> noChange'
-        //     }
-        //   );
-        // }
-        // console.log('succsesfully update')
       } else {
         console.log('failed update');
         vesselPool[i]['status'] = 'lost';
@@ -118,6 +110,7 @@ class VesselTrackerConnector {
             status: 'lost',
             lat: 0,
             lon: 0,
+            sog: 0,
             cog: 0
           }
         );
@@ -164,6 +157,18 @@ class VesselTrackerConnector {
 
   }
 
+
+  saveData() {
+
+    let data = {
+      meta:'meta info => timestamp, numVessels, etc.',
+      vesselPool:this.vesselPool
+    };
+
+    let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+    saveAs(blob, "blob.json");
+
+  }
 }
 
 
