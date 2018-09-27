@@ -6,7 +6,6 @@ import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRan
 import * as PIXI from 'pixi.js'
 
 import '../Scene.scss'
-import VesselTrackerConnector from "./VesselTrackerConnector";
 import * as TrackData from "./TrackData";
 
 
@@ -107,23 +106,25 @@ class TrackPlayer extends React.Component {
   parseTrackData(_trackData) {
     let validCounter = 0;
     let range = {
-      start: 4,
-      end: 5,
-      count: 0
-    }
+      start: 6,
+      end: 74,
+      _count: 0
+    };
+
     for (let i = 0; i < _trackData.vesselPool.length; i++) {
       if (_trackData.vesselPool[i]['hasMoved'] && _trackData.vesselPool[i]['status'] !== 'lost') {
-        validCounter++;
+        // if added later ... add Points []<
         if (_trackData.vesselPool[i]['trackData'].length > 59) {
-          // if added later ... length <
-          if (range.count < range.end) {
-            if (range.count >= range.start) {
-              console.log(_trackData.vesselPool[i])
-              this.initVessel(_trackData.vesselPool[i]['trackData'])
+          console.log(validCounter, range._count, range.count >= range.start, range.count < range.end)
+          if (validCounter >= range.start) {
+            if (validCounter < range.end) {
+              console.log(_trackData.vesselPool[i]);
+              this.initVessel(_trackData.vesselPool[i]['trackData']);
+              range._count++;
             }
-            range.count++;
           }
         }
+        validCounter++;
       }
     }
 
@@ -132,7 +133,11 @@ class TrackPlayer extends React.Component {
 
 
   initVessel(_trackData) {
+
     let vessel = new PIXI.Graphics();
+    vessel.beginFill(0x1f164f);
+    vessel.drawCircle(0, 0, 3);
+    vessel.endFill();
     this.vesselGraphics.addChild(vessel);
 
 
@@ -156,13 +161,15 @@ class TrackPlayer extends React.Component {
       onUpdate: () => {
         // console.log(trackTween.progress());
         // let frame = Math.round(trackTween.progress() * 60);
-        vessel.clear();
+        // vessel.clear();
         // vessel.beginFill(this.getColorByStatus(parsedTrack[frame].status));
-        vessel.beginFill(0x1f164f);
-        vessel.drawCircle(0, 0, 3);
-        vessel.endFill();
+        // vessel.beginFill(0x1f164f);
+        // vessel.drawCircle(0, 0, 3);
+        // vessel.endFill();
       },
     });
+
+
   }
 
 

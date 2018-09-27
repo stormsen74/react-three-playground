@@ -1,5 +1,6 @@
 import axios from 'axios';
 import saveAs from 'file-saver';
+
 const FileSaver = require('file-saver');
 
 class VesselTrackerConnector {
@@ -42,7 +43,9 @@ class VesselTrackerConnector {
       mmsi: vesselData['aisStatic']['mmsi'],
       name: vesselData['aisStatic']['name'],
       status: vesselData['geoDetails']['status'],
-      hasMoved: vesselData['geoDetails']['status'] === 'moving' ? true : false,
+      inBounds: false, //'check for Bounds'
+      // hasMoved: vesselData['geoDetails']['status'] === 'moving' ? true : false,
+      hasMoved: false, // => check for delta / in stepRange[5]?
       aisPosition: {
         lat: vesselData['aisPosition']['lat'],
         lon: vesselData['aisPosition']['lon'],
@@ -161,8 +164,8 @@ class VesselTrackerConnector {
   saveData() {
 
     let data = {
-      meta:'meta info => timestamp, numVessels, etc.',
-      vesselPool:this.vesselPool
+      meta: 'meta info => timestamp, numVessels, etc.',
+      vesselPool: this.vesselPool
     };
 
     let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
