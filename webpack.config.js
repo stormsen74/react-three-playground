@@ -40,10 +40,6 @@ let plugins = [
 ];
 
 let rules = [
-  // {
-  //   test: /\.json$/,
-  //   loader: 'json-loader'
-  // },
   {
     // handle JS
     test: /\.(js|jsx)$/,

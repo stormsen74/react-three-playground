@@ -11,6 +11,9 @@ import '../Scene.scss'
 import 'bootstrap/dist/css/bootstrap.css';
 import VesselTrackerConnector from "./VesselTrackerConnector";
 
+//Nutzername: jwu
+//Passwort: 9j583t
+
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -33,7 +36,7 @@ class HafenMap extends React.Component {
       movingVessels: 0,
       movedVessels: 0,
       currentStep: 0
-    }
+    };
 
     this.GeoBounds = {
       minLong: 9.7538,
@@ -183,9 +186,7 @@ class HafenMap extends React.Component {
 
   plotVesselPath(pathArray, vesselData) {
 
-    console.log(pathArray, vesselData)
-
-    // if (vesselData.mmsi === 211513200) return
+    // console.log(pathArray, vesselData)
 
     let path = new PIXI.Graphics();
     this.pathGraphics.addChild(path);
@@ -221,7 +222,10 @@ class HafenMap extends React.Component {
 
   plotVessel(vesselData) {
 
-    if (!vesselData.hasMoved) return;
+    // initial => show all / next step only moving vessels ...
+    if (this.timerData.currentStep > 0) {
+      if (!vesselData.hasMoved) return;
+    }
 
     let vessel = new PIXI.Graphics();
     vessel.beginFill(this.getColorByStatus(vesselData.status));

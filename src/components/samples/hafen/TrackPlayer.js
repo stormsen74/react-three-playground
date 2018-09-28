@@ -1,15 +1,14 @@
 import React from 'react';
 import connect from "react-redux/es/connect/connect";
 import 'gsap/TweenMax';
+import 'gsap/TimelineMax';
 import CloseIcon from 'core/icons/close.inline.svg';
 import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRange.png';
 import * as PIXI from 'pixi.js'
 
 import '../Scene.scss'
-import * as TrackData from "./TrackData";
 
-
-const trackData = require("./trackData/trackData.json");
+const trackData = require("./trackData/track60.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -37,7 +36,11 @@ class TrackPlayer extends React.Component {
     };
 
 
+    this.trackLength = 60;
+
+
   }
+
 
   componentDidMount() {
 
@@ -76,6 +79,14 @@ class TrackPlayer extends React.Component {
 
   }
 
+  initTimeline() {
+    this.vesselTimeline = new TimelineMax({onComplete: this.onTimelineComplete, onCompleteScope: this, paused: true});
+  }
+
+  onTimelineComplete() {
+    console.log('onTimelineComplete')
+  }
+
   loadReady() {
     this.initStage();
 
@@ -89,16 +100,9 @@ class TrackPlayer extends React.Component {
     this.app.stage.addChild(this.vesselGraphics);
 
     this.show();
-
-    // this.initVessel(TrackData.track_01);
-    // this.initVessel(TrackData.track_02);
-    // this.initVessel(TrackData.track_03);
-    // this.initVessel(TrackData.track_04);
-    // this.initVessel(TrackData.track_05)
-
+    this.initTimeline();
 
     this.parseTrackData(trackData);
-
 
   }
 
@@ -106,43 +110,49 @@ class TrackPlayer extends React.Component {
   parseTrackData(_trackData) {
     let validCounter = 0;
     let range = {
-      start: 6,
-      end: 74,
+      start: 0,
+      end: 100,
       _count: 0
     };
 
     for (let i = 0; i < _trackData.vesselPool.length; i++) {
       if (_trackData.vesselPool[i]['hasMoved'] && _trackData.vesselPool[i]['status'] !== 'lost') {
+
         // if added later ... add Points []<
-        if (_trackData.vesselPool[i]['trackData'].length > 59) {
-          console.log(validCounter, range._count, range.count >= range.start, range.count < range.end)
-          if (validCounter >= range.start) {
-            if (validCounter < range.end) {
-              console.log(_trackData.vesselPool[i]);
-              this.initVessel(_trackData.vesselPool[i]['trackData']);
-              range._count++;
-            }
+        if (validCounter >= range.start) {
+          if (validCounter < range.end) {
+            console.log(_trackData.vesselPool[i]);
+            this.initVessel(_trackData.vesselPool[i]['trackData'], _trackData.vesselPool[i]['mmsi']);
+            range._count++;
           }
         }
         validCounter++;
       }
     }
 
-    console.log('valid vessels: ', validCounter)
+    console.log('valid vessels: ', validCounter);
+    this.vesselTimeline.play();
   }
 
 
-  initVessel(_trackData) {
+  initVessel(_trackData, _mmsi) {
 
-    let vessel = new PIXI.Graphics();
-    vessel.beginFill(0x1f164f);
-    vessel.drawCircle(0, 0, 3);
-    vessel.endFill();
+    let vessel = new PIXI.Container();
+
+    let vesselGraphics = new PIXI.Graphics();
+    vesselGraphics.beginFill(0x1f164f);
+    vesselGraphics.drawCircle(0, 0, 3);
+    vesselGraphics.endFill();
+
+    let display = new PIXI.Text(_mmsi, {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xff0000, align: 'center'});
+
+    vessel.addChild(vesselGraphics);
+    vessel.addChild(display);
     this.vesselGraphics.addChild(vessel);
 
 
     let parsedTrack = [];
-    for (let i = 0; i < 59; i++) {
+    for (let i = 0; i < _trackData.length; i++) {
       let pos = this.getXY(_trackData[i].lat, _trackData[i].lon);
       parsedTrack[i] = {x: pos[0], y: pos[1], status: _trackData[i].status}
     }
@@ -150,7 +160,7 @@ class TrackPlayer extends React.Component {
     vessel.x = parsedTrack[0].x;
     vessel.y = parsedTrack[0].y;
 
-    let trackTween = TweenMax.to(vessel, 60, {
+    let trackTween = TweenMax.to(vessel, this.trackLength, {
       bezier: {
         curviness: 1,
         type: 'thru',
@@ -169,6 +179,8 @@ class TrackPlayer extends React.Component {
       },
     });
 
+
+    this.vesselTimeline.add(trackTween, '0')
 
   }
 
