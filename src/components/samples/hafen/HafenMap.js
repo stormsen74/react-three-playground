@@ -45,6 +45,13 @@ class HafenMap extends React.Component {
       maxLat: 53.4605
     };
 
+    this.mapRange = {
+      minLong: 9.9165,
+      maxLong: 9.9755,
+      minLat: 53.5503,
+      maxLat: 53.5148
+    };
+
     this.mapData = {
       size: {
         width: 1920,
@@ -102,6 +109,52 @@ class HafenMap extends React.Component {
 
   }
 
+  plotGeoRect() {
+
+    // let display = new PIXI.Text(_vesselData['mmsi'], {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xcc660000, align: 'center'});
+
+    let topLeft = this.cartesianFromLatLong(this.mapRange.minLat, this.mapRange.minLong);
+    let topRight = this.cartesianFromLatLong(this.mapRange.minLat, this.mapRange.maxLong);
+    let bottomRight = this.cartesianFromLatLong(this.mapRange.maxLat, this.mapRange.maxLong);
+    let bottomLeft = this.cartesianFromLatLong(this.mapRange.maxLat, this.mapRange.minLong);
+
+    let shape = new PIXI.Graphics();
+    shape.beginFill(0xc30000, .1);
+    shape.lineStyle(.5, 0xcc0000);
+    shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
+    shape.endFill();
+    this.app.stage.addChild(shape);
+
+    for (let i = 0; i <= 3; i++) {
+      let point = new PIXI.Graphics();
+      point.beginFill(0x000000);
+      point.drawCircle(0, 0, 1.5);
+      point.endFill();
+
+      let pos = [];
+      switch (i) {
+        case 0:
+          pos = topLeft;
+          break;
+        case 1:
+          pos = topRight;
+          break;
+        case 2:
+          pos = bottomRight;
+          break;
+        case 3:
+          pos = bottomLeft;
+          break;
+      }
+
+      point.x = pos[0];
+      point.y = pos[1];
+      this.app.stage.addChild(point);
+    }
+
+
+  }
+
   loadReady() {
     this.initStage();
 
@@ -117,9 +170,7 @@ class HafenMap extends React.Component {
     this.vesselGraphics = new PIXI.Container();
     this.app.stage.addChild(this.vesselGraphics);
 
-    // let pos = this.getXY(53.544448333333335, 9.985446666666666);
-    // point.x = pos[0];
-    // point.y = pos[1];
+    this.plotGeoRect();
 
 
     this.show();
@@ -194,16 +245,16 @@ class HafenMap extends React.Component {
     let points = new PIXI.Graphics();
     this.pointGraphics.addChild(points);
 
-    // let posStart = this.getXY(pathArray[0].lat, pathArray[0].lon);
+    // let posStart = this.cartesianFromLatLong(pathArray[0].lat, pathArray[0].lon);
     // path.moveTo(posStart[0], posStart[1]);
 
 
     for (let i = 0; i < pathArray.length; i++) {
       if (i == 0) {
-        const pos = this.getXY(pathArray[0].lat, pathArray[0].lon);
+        const pos = this.cartesianFromLatLong(pathArray[0].lat, pathArray[0].lon);
         path.moveTo(pos[0], pos[1]);
       } else {
-        const pos = this.getXY(pathArray[i].lat, pathArray[i].lon);
+        const pos = this.cartesianFromLatLong(pathArray[i].lat, pathArray[i].lon);
         path.lineStyle(1, 0x47f62a, 1);
         path.lineTo(pos[0], pos[1]);
       }
@@ -211,7 +262,7 @@ class HafenMap extends React.Component {
 
 
     for (let j = 0; j < pathArray.length - 1; j++) {
-      const pos = this.getXY(pathArray[j].lat, pathArray[j].lon);
+      const pos = this.cartesianFromLatLong(pathArray[j].lat, pathArray[j].lon);
       points.beginFill(0x125e0a);
       points.drawCircle(pos[0], pos[1], 2);
       points.endFill();
@@ -229,10 +280,9 @@ class HafenMap extends React.Component {
 
     let vessel = new PIXI.Graphics();
     vessel.beginFill(this.getColorByStatus(vesselData.status));
-    // point.drawCircle(0, 0, 3);
     vessel.drawPolygon([0, -5, 4, 5, -4, 5]);
     vessel.endFill();
-    let pos = this.getXY(vesselData.aisPosition.lat, vesselData.aisPosition.lon);
+    let pos = this.cartesianFromLatLong(vesselData.aisPosition.lat, vesselData.aisPosition.lon);
     vessel.x = pos[0];
     vessel.y = pos[1];
     vessel.rotation = vesselData.aisPosition.cog * 0.0174533; // rad to deg
@@ -271,7 +321,7 @@ class HafenMap extends React.Component {
 
   }
 
-  getXY(lat, long) {
+  cartesianFromLatLong(lat, long) {
     return [
       (long - this.GeoBounds.minLong) / (this.GeoBounds.maxLong - this.GeoBounds.minLong) * this.mapData.size.width,
       (lat - this.GeoBounds.minLat) / (this.GeoBounds.maxLat - this.GeoBounds.minLat) * this.mapData.size.height

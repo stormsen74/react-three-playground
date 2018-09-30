@@ -7,6 +7,7 @@
   bottom: 0;
   left: 0;
   opacity: 0;
+  overflow: hidden;
 }
 
 canvas {
@@ -52,5 +53,22 @@ canvas {
     stroke-width: 3px;
     stroke-linecap: round;
     animation: progress 1s ease-out forwards;
+  }
+}
+
+.wrapper {
+  position: absolute;
+  width: 1920px;
+  height: 1077px;
+
+  .react-dat-gui {
+    width: 450px;
+    right: 0;
+    .cr .label-text {
+      width: 20% !important;
+    }
+    .cr.number .slider {
+      width: 60% !important;
+    }
   }
 }
