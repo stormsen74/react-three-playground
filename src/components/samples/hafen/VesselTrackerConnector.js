@@ -154,10 +154,10 @@ class VesselTrackerConnector {
         if (vesselPool[i]['trackData'].length >= 1) {
           const pathArrayLength = vesselPool[i]['trackData'].length;
           const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
-          if (traveledDistance < .00004) {
+          if (traveledDistance < .00005  || result[0]['aisPosition']['sog'] < .2) {
             // console.log(result[0]['geoDetails']['status'], traveledDistance);
             vesselPool[i]['status'] = 'static';
-            let lastTrackData = vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 2];
+            let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
             vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
               {
                 status: 'static',
