@@ -14,6 +14,8 @@ import VesselTrackerConnector from "./VesselTrackerConnector";
 //Nutzername: jwu
 //Passwort: 9j583t
 
+// https://newapi.vesseltracker.com/api/v1/api-docs/index.html#/AISData/get_vessels_userpolygon
+
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -33,6 +35,7 @@ class HafenMap extends React.Component {
 
     this.state = {
       vesselPoolSize: 0,
+      vesselsInMapRange: 0,
       movingVessels: 0,
       movedVessels: 0,
       currentStep: 0
@@ -119,8 +122,8 @@ class HafenMap extends React.Component {
     let bottomLeft = this.cartesianFromLatLong(this.mapRange.maxLat, this.mapRange.minLong);
 
     let shape = new PIXI.Graphics();
-    shape.beginFill(0xc30000, .1);
-    shape.lineStyle(.5, 0xcc0000);
+    // shape.beginFill(0xc30000, .1);
+    shape.lineStyle(.5, 0x062f3c);
     shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
     shape.endFill();
     this.app.stage.addChild(shape);
@@ -151,7 +154,6 @@ class HafenMap extends React.Component {
       point.y = pos[1];
       this.app.stage.addChild(point);
     }
-
 
   }
 
@@ -227,6 +229,9 @@ class HafenMap extends React.Component {
       case 'moving':
         color = 0x00ff00;
         break;
+      case 'static':
+        color = 0xffa200;
+        break;
       case 'lost':
         color = 0x2ad2f6;
         break;
@@ -245,26 +250,21 @@ class HafenMap extends React.Component {
     let points = new PIXI.Graphics();
     this.pointGraphics.addChild(points);
 
-    // let posStart = this.cartesianFromLatLong(pathArray[0].lat, pathArray[0].lon);
-    // path.moveTo(posStart[0], posStart[1]);
-
-
     for (let i = 0; i < pathArray.length; i++) {
       if (i == 0) {
         const pos = this.cartesianFromLatLong(pathArray[0].lat, pathArray[0].lon);
         path.moveTo(pos[0], pos[1]);
       } else {
         const pos = this.cartesianFromLatLong(pathArray[i].lat, pathArray[i].lon);
-        path.lineStyle(1, 0x47f62a, 1);
+        path.lineStyle(1, 0x47f62a, vesselData.inMapRange ? 1 : .25);
         path.lineTo(pos[0], pos[1]);
       }
     }
 
-
     for (let j = 0; j < pathArray.length - 1; j++) {
       const pos = this.cartesianFromLatLong(pathArray[j].lat, pathArray[j].lon);
-      points.beginFill(0x125e0a);
-      points.drawCircle(pos[0], pos[1], 2);
+      points.beginFill(0x125e0a, vesselData.inMapRange ? 1 : .25);
+      points.drawCircle(pos[0], pos[1], 1);
       points.endFill();
     }
 
@@ -279,7 +279,14 @@ class HafenMap extends React.Component {
     }
 
     let vessel = new PIXI.Graphics();
-    vessel.beginFill(this.getColorByStatus(vesselData.status));
+    vessel.mmsi = vesselData['mmsi']
+    vessel.interactive = true;
+    vessel.cursor = 'pointer';
+    vessel.on('click', (event) => {
+      let vesselData = this.vtc.getVesselByMMSI(event.target.mmsi);
+      console.log(event.target.mmsi, vesselData)
+    });
+    vessel.beginFill(this.getColorByStatus(vesselData.status), vesselData.inMapRange ? 1 : .25);
     vessel.drawPolygon([0, -5, 4, 5, -4, 5]);
     vessel.endFill();
     let pos = this.cartesianFromLatLong(vesselData.aisPosition.lat, vesselData.aisPosition.lon);
@@ -292,18 +299,24 @@ class HafenMap extends React.Component {
 
   onUpdateTrackerData(vesselPool) {
 
-    // update Debug
-    this.setState({vesselPoolSize: vesselPool.length});
 
+    for (let i = 0; i < this.vesselGraphics.children.length; i++) {
+      this.vesselGraphics.children[i].destroy();
+    }
     this.vesselGraphics.removeChildren(0, this.vesselGraphics.children.length);
     this.pathGraphics.removeChildren(0, this.pathGraphics.children.length);
     this.pointGraphics.removeChildren(0, this.pointGraphics.children.length);
 
     let movingVessels = 0;
     let movedVessels = 0;
+    let vesselsInMapRange = 0;
 
     for (let i = 0; i < vesselPool.length; i++) {
       this.plotVessel(vesselPool[i]);
+
+      if (vesselPool[i]['inMapRange'] === true) {
+        vesselsInMapRange++
+      }
 
       if (vesselPool[i]['hasMoved'] === true) {
         movedVessels++
@@ -315,6 +328,9 @@ class HafenMap extends React.Component {
       }
     }
 
+    // update Debug
+    this.setState({vesselPoolSize: vesselPool.length});
+    this.setState({vesselsInMapRange: vesselsInMapRange});
     this.setState({movingVessels: movingVessels});
     this.setState({movedVessels: movedVessels});
 
@@ -362,9 +378,10 @@ class HafenMap extends React.Component {
           {indicatorMarkup}
           <div style={{position: 'absolute', top: '45px', right: '5px', width: '185px'}}>{'currentStep: ' + this.state.currentStep}</div>
           <div style={{position: 'absolute', top: '65px', right: '5px', width: '185px'}}>{'vesselPoolSize: ' + this.state.vesselPoolSize}</div>
-          <div style={{position: 'absolute', top: '85px', right: '5px', width: '185px'}}>{'movingVessels: ' + this.state.movingVessels}</div>
-          <div style={{position: 'absolute', top: '105px', right: '5px', width: '185px'}}>{'movedVessels: ' + this.state.movedVessels}</div>
-          <div style={{position: 'absolute', top: '140px', right: '5px', width: '185px'}}>
+          <div style={{position: 'absolute', top: '85px', right: '5px', width: '185px'}}>{'vesselsInRange: ' + this.state.vesselsInMapRange}</div>
+          <div style={{position: 'absolute', top: '105px', right: '5px', width: '185px'}}>{'movingVessels: ' + this.state.movingVessels}</div>
+          <div style={{position: 'absolute', top: '125px', right: '5px', width: '185px'}}>{'movedVessels: ' + this.state.movedVessels}</div>
+          <div style={{position: 'absolute', top: '155px', right: '5px', width: '185px'}}>
             <Button onClick={() => this.onClickSave()} color="success">Save Data</Button>
           </div>
         </div>

@@ -9,7 +9,8 @@ import CloseIcon from 'core/icons/close.inline.svg';
 import '../Scene.scss'
 
 import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRange.png';
-const trackData = require("./trackData/track30_new.json");
+
+const trackData = require("./trackData/track60.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -41,6 +42,13 @@ class TrackPlayer extends React.Component {
       maxLat: 53.4605
     };
 
+    this.mapRange = {
+      minLong: 9.9165,
+      maxLong: 9.9755,
+      minLat: 53.5503,
+      maxLat: 53.5148
+    };
+
     this.mapData = {
       size: {
         width: 1920,
@@ -48,7 +56,53 @@ class TrackPlayer extends React.Component {
       }
     };
 
-    this.trackLength = 30;
+
+    this.trackLength = 60;
+
+  }
+
+  plotGeoRect() {
+
+    // let display = new PIXI.Text(_vesselData['mmsi'], {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xcc660000, align: 'center'});
+
+    let topLeft = this.cartesianFromLatLong(this.mapRange.minLat, this.mapRange.minLong);
+    let topRight = this.cartesianFromLatLong(this.mapRange.minLat, this.mapRange.maxLong);
+    let bottomRight = this.cartesianFromLatLong(this.mapRange.maxLat, this.mapRange.maxLong);
+    let bottomLeft = this.cartesianFromLatLong(this.mapRange.maxLat, this.mapRange.minLong);
+
+    let shape = new PIXI.Graphics();
+    // shape.beginFill(0xc30000, .1);
+    shape.lineStyle(.5, 0x062f3c);
+    shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
+    shape.endFill();
+    this.app.stage.addChild(shape);
+
+    for (let i = 0; i <= 3; i++) {
+      let point = new PIXI.Graphics();
+      point.beginFill(0x000000);
+      point.drawCircle(0, 0, 1.5);
+      point.endFill();
+
+      let pos = [];
+      switch (i) {
+        case 0:
+          pos = topLeft;
+          break;
+        case 1:
+          pos = topRight;
+          break;
+        case 2:
+          pos = bottomRight;
+          break;
+        case 3:
+          pos = bottomLeft;
+          break;
+      }
+
+      point.x = pos[0];
+      point.y = pos[1];
+      this.app.stage.addChild(point);
+    }
 
   }
 
@@ -73,6 +127,8 @@ class TrackPlayer extends React.Component {
 
     this.vesselGraphics = new PIXI.Container();
     this.app.stage.addChild(this.vesselGraphics);
+
+    this.plotGeoRect();
 
     this.show();
     this.initTimeline();
@@ -123,8 +179,13 @@ class TrackPlayer extends React.Component {
     };
 
     for (let i = 0; i < _data.vesselPool.length; i++) {
-      if (_data.vesselPool[i]['hasMoved'] && _data.vesselPool[i]['status'] !== 'lost') {
 
+      let hasMoved = _data.vesselPool[i]['hasMoved'];
+      let inMapRange = _data.vesselPool[i]['inMapRange'];
+      let validData = _data.vesselPool[i]['valid'];
+      validData = true;
+
+      if (hasMoved && inMapRange && validData) {
         if (validCounter >= range.start) {
           if (validCounter < range.end) {
             this.initVessel(_data.vesselPool[i]);
@@ -142,15 +203,25 @@ class TrackPlayer extends React.Component {
   initVessel(_vesselData) {
 
     let vessel = new PIXI.Container();
-    let display = new PIXI.Text(_vesselData['mmsi'], {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xcc660000, align: 'center'});
+    let display = new PIXI.Text(_vesselData['mmsi'], {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xff0000, align: 'center'});
     let vesselGraphics = new PIXI.Graphics();
     vesselGraphics.beginFill(0x1f164f);
-    vesselGraphics.drawCircle(0, 0, 3);
+    vesselGraphics.drawCircle(0, 0, 2);
     // vesselGraphics.drawPolygon([0, -5, 4, 5, -4, 5]);
     vesselGraphics.endFill();
+
     vessel.addChild(vesselGraphics);
-    vessel.addChild(display);
+    if (!_vesselData['valid']) {
+      vessel.addChild(display);
+    }
     this.vesselGraphics.addChild(vessel);
+
+    vessel.data = _vesselData;
+    vessel.interactive = true;
+    vessel.cursor = 'pointer';
+    vessel.on('click', (event) => {
+      console.log(event.target.data)
+    });
 
     let parsedTrack = [];
     for (let i = 0; i < _vesselData['trackData'].length; i++) {
@@ -168,9 +239,7 @@ class TrackPlayer extends React.Component {
         values: parsedTrack,
         autoRotate: false
       },
-      ease: Power0.easeNone,
-      onUpdate: () => {
-      },
+      ease: Power0.easeNone
     });
 
 
