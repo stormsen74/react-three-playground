@@ -51,7 +51,7 @@ class VesselTrackerConnector {
     return Vector2.getDistance(v1, v2);
   }
 
-  hasMoved(trackData, mmsi) {
+  hasMoved(trackData) {
     let distance = 0;
 
     if (trackData.length > 4) {
@@ -154,7 +154,7 @@ class VesselTrackerConnector {
         if (vesselPool[i]['trackData'].length >= 1) {
           const pathArrayLength = vesselPool[i]['trackData'].length;
           const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
-          if (traveledDistance < .00005  || result[0]['aisPosition']['sog'] < .2) {
+          if (traveledDistance < .00005  || result[0]['aisPosition']['sog'] <= .3) {
             // console.log(result[0]['geoDetails']['status'], traveledDistance);
             vesselPool[i]['status'] = 'static';
             let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
@@ -173,7 +173,7 @@ class VesselTrackerConnector {
         if (!vesselPool[i]['inMapRange'] && this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon'])) vesselPool[i]['inMapRange'] = true;
 
         // check movement
-        if (!vesselPool[i]['hasMoved'] && result[0]['geoDetails']['status'] == 'moving' && this.hasMoved(vesselPool[i]['trackData'], vesselPool[i]['mmsi'])) vesselPool[i]['hasMoved'] = true;
+        if (!vesselPool[i]['hasMoved'] && result[0]['geoDetails']['status'] == 'moving' && this.hasMoved(vesselPool[i]['trackData'])) vesselPool[i]['hasMoved'] = true;
 
 
         // check for large distance jumps (unvalid data!)

@@ -10,7 +10,7 @@ import '../Scene.scss'
 
 import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRange.png';
 
-const trackData = require("./trackData/track60.json");
+const trackData = require("./trackData/lastTrack60.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
