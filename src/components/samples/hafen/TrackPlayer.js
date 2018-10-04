@@ -42,11 +42,18 @@ class TrackPlayer extends React.Component {
       maxLat: 53.4605
     };
 
+    // this.mapRange = {
+    //   minLong: 9.9165,
+    //   maxLong: 9.9755,
+    //   minLat: 53.5503,
+    //   maxLat: 53.5148
+    // };
+
     this.mapRange = {
-      minLong: 9.9165,
-      maxLong: 9.9755,
-      minLat: 53.5503,
-      maxLat: 53.5148
+      minLong: 9.9174	,
+      maxLong: 9.9761,
+      minLat: 53.5497,
+      maxLat: 53.5150
     };
 
     this.mapData = {
