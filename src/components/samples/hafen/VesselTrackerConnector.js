@@ -151,23 +151,23 @@ class VesselTrackerConnector {
 
         // if movement < (.00002) => set status 'moored' => fill position with last position
         // maybe check for ['sog']?!
-        if (vesselPool[i]['trackData'].length >= 1) {
-          const pathArrayLength = vesselPool[i]['trackData'].length;
-          const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
-          if (traveledDistance < .00005  || result[0]['aisPosition']['sog'] <= .3) {
-            // console.log(result[0]['geoDetails']['status'], traveledDistance);
-            vesselPool[i]['status'] = 'static';
-            let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
-            vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
-              {
-                status: 'static',
-                lat: lastTrackData['lat'],
-                lon: lastTrackData['lon'],
-                sog: result[0]['aisPosition']['sog'],
-                cog: result[0]['aisPosition']['cog']
-              }
-          }
-        }
+        // if (vesselPool[i]['trackData'].length >= 1) {
+        //   const pathArrayLength = vesselPool[i]['trackData'].length;
+        //   const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
+        //   if (traveledDistance < .00005  || result[0]['aisPosition']['sog'] <= .3) {
+        //     // console.log(result[0]['geoDetails']['status'], traveledDistance);
+        //     vesselPool[i]['status'] = 'static';
+        //     let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
+        //     vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
+        //       {
+        //         status: 'static',
+        //         lat: lastTrackData['lat'],
+        //         lon: lastTrackData['lon'],
+        //         sog: result[0]['aisPosition']['sog'],
+        //         cog: result[0]['aisPosition']['cog']
+        //       }
+        //   }
+        // }
 
         // check => in mapRange
         if (!vesselPool[i]['inMapRange'] && this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon'])) vesselPool[i]['inMapRange'] = true;
