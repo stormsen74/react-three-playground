@@ -10,7 +10,8 @@ import '../Scene.scss'
 import {Vector2} from "../../../utils/vector2";
 
 
-import vesselTrackerRange from 'components/samples/hafen/images/ProtoRange.png';
+import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
+import VTPlayerUtils from "./utils/VTPlayerUtils";
 
 const trackData = require("./trackData/lastTrack60.json");
 
@@ -24,7 +25,8 @@ class TrackPlayer extends React.Component {
       package: 'react-dat-gui',
       progress: 0,
       showPath: true,
-      feelsLike: '#2FA1D6',
+      showBounds: true,
+      feelsLike: '#2FA1D6'
     }
   };
 
@@ -37,113 +39,12 @@ class TrackPlayer extends React.Component {
     this.playTimeline = this.playTimeline.bind(this);
     this.pauseTimeline = this.pauseTimeline.bind(this);
 
-    // this.GeoBounds = {
-    //   minLong: 9.7538,
-    //   maxLong: 10.0948,
-    //   minLat: 53.5743,
-    //   maxLat: 53.4605
-    // };
-
-    this.GeoBounds = {
-      minLong: 9.9174,
-      maxLong: 9.9761,
-      minLat: 53.5497,
-      maxLat: 53.5150
-    };
-
-    this.mapRange = {
-      minLong: 9.9174,
-      maxLong: 9.9761,
-      minLat: 53.5497,
-      maxLat: 53.5150
-    };
-
-
-    this.collisionBounds = {
-      minLong: 9.94979,
-      maxLong: 9.95385,
-      minLat: 53.54188,
-      maxLat: 53.53949,
-      lineStart: {
-        // lat: 53.540703,
-        // long: 9.951194
-        lat: 53.540694,
-        long: 9.951064
-      },
-      lineEnd: {
-        lat: 53.540894,
-        long: 9.954155
-      },
-      collisionLineStart: new Vector2(),
-      collisionLineEnd: new Vector2()
-    };
-
-    this.mapData = {
-      size: {
-        width: 1080,
-        height: 1074
-      }
-    };
-
-
-    this.trackLength = 60;
+    this.trackLength = 65;
 
   }
-
-  plotGeoRect() {
-
-    // let display = new PIXI.Text(_vesselData['mmsi'], {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xcc660000, align: 'center'});
-
-    let topLeft = this.cartesianFromLatLong(this.collisionBounds.minLat, this.collisionBounds.minLong);
-    let topRight = this.cartesianFromLatLong(this.collisionBounds.minLat, this.collisionBounds.maxLong);
-    let bottomRight = this.cartesianFromLatLong(this.collisionBounds.maxLat, this.collisionBounds.maxLong);
-    let bottomLeft = this.cartesianFromLatLong(this.collisionBounds.maxLat, this.collisionBounds.minLong);
-
-    let shape = new PIXI.Graphics();
-    // shape.beginFill(0xc30000, .1);
-    shape.lineStyle(.5, 0x062f3c);
-    shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
-    shape.endFill();
-    this.app.stage.addChild(shape);
-
-    for (let i = 0; i <= 3; i++) {
-      let pos = [];
-      switch (i) {
-        case 0:
-          pos = topLeft;
-          break;
-        case 1:
-          pos = topRight;
-          break;
-        case 2:
-          pos = bottomRight;
-          break;
-        case 3:
-          pos = bottomLeft;
-          break;
-      }
-
-      this.plotPoint(new Vector2(pos[0], pos[1]), 0x000000)
-    }
-
-    let lineStart = this.cartesianFromLatLong(this.collisionBounds.lineStart.lat, this.collisionBounds.lineStart.long);
-    let lineEnd = this.cartesianFromLatLong(this.collisionBounds.lineEnd.lat, this.collisionBounds.lineEnd.long);
-
-    this.collisionBounds.collisionLineStart = new Vector2(lineStart[0], lineStart[1]);
-    this.collisionBounds.collisionLineEnd = new Vector2(lineEnd[0], lineEnd[1])
-
-    this.plotPoint(new Vector2(lineStart[0], lineStart[1]), 0x000000);
-    this.plotPoint(new Vector2(lineEnd[0], lineEnd[1]), 0x000000);
-
-  }
-
 
   componentDidMount() {
     this.initialLoad();
-  }
-
-  show() {
-    TweenMax.to(this.canvasWrapper, .5, {delay: .25, opacity: 1, ease: Cubic.easeIn});
   }
 
   initialLoad() {
@@ -153,28 +54,64 @@ class TrackPlayer extends React.Component {
   loadReady() {
     this.initStage();
 
+    this.mapLayer = new PIXI.Container();
+    this.boundsLayer = new PIXI.Container();
+    this.pathLayer = new PIXI.Container();
+    this.vesselLayer = new PIXI.Container();
+
     let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
-    this.app.stage.addChild(sprite);
+    this.mapLayer.addChild(sprite);
 
-    this.pathGraphics = new PIXI.Container();
-    this.vesselGraphics = new PIXI.Container();
+    this.mapLayer.cacheAsBitmap = true;
+    this.pathLayer.cacheAsBitmap = true;
 
-    this.app.stage.addChild(this.pathGraphics);
-    this.app.stage.addChild(this.vesselGraphics);
+    this.app.stage.addChild(this.mapLayer);
+    this.app.stage.addChild(this.boundsLayer);
+    this.app.stage.addChild(this.pathLayer);
+    this.app.stage.addChild(this.vesselLayer);
 
-    this.plotGeoRect();
+
+    this.collisionBounds = [
+      {
+        index: 0,
+        minLong: 9.94979,
+        maxLong: 9.95385,
+        minLat: 53.54188,
+        maxLat: 53.53949,
+        collisionLineStart: VTPlayerUtils.getVectorFromGeoPoint(53.540694, 9.951064),
+        collisionLineEnd: VTPlayerUtils.getVectorFromGeoPoint(53.540894, 9.954155)
+      },
+      {
+        index: 1,
+        minLong: 9.951390,
+        maxLong: 9.953890,
+        minLat: 53.539734,
+        maxLat: 53.537987,
+        collisionLineStart: VTPlayerUtils.getVectorFromGeoPoint(53.538943, 9.952549),
+        collisionLineEnd: VTPlayerUtils.getVectorFromGeoPoint(53.538745, 9.954598)
+      }
+    ];
+
+
+    VTPlayerUtils.plotCollisionBounds(this.collisionBounds[0], this.boundsLayer);
+    VTPlayerUtils.plotCollisionBounds(this.collisionBounds[1], this.boundsLayer);
+
+    this.initTimeline();
+    this.parseTrackData(trackData);
+
 
     this.show();
-    this.initTimeline();
-
-    this.parseTrackData(trackData);
   }
 
 
+  show() {
+    TweenMax.to(this.canvasWrapper, .5, {delay: .25, opacity: 1, ease: Cubic.easeIn});
+  }
+
   initStage() {
     this.app = new PIXI.Application({
-        width: this.mapData.size.width,
-        height: this.mapData.size.height,
+        width: VTPlayerUtils.mapData.size.width,
+        height: VTPlayerUtils.mapData.size.height,
         antialias: true,    // default: false
         transparent: false, // default: false
         resolution: 1       // default: 1
@@ -207,8 +144,8 @@ class TrackPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 31,
-      end: 32,
+      start: 0,
+      end: 100,
       _count: 0
     };
 
@@ -234,83 +171,6 @@ class TrackPlayer extends React.Component {
   }
 
 
-  lineIntersecting(l1_start, l1_end, l2_start, l2_end) {
-    // l1_start = new Vector2(1, 1);
-    // l1_end = new Vector2(2, 1);
-    // l2_start = new Vector2(1, .25);
-    // l2_end = new Vector2(1.8, 1.6);
-
-    let isIntersecting = false;
-
-
-    //Direction of the lines
-    let l1_dir = Vector2.subtract(l1_end, l1_start).normalize();
-    let l2_dir = Vector2.subtract(l2_end, l2_start).normalize();
-
-    //If we know the direction we can get the normal vector to each line
-    let l1_normal = new Vector2(-l1_dir.y, l1_dir.x);
-    let l2_normal = new Vector2(-l2_dir.y, l2_dir.x);
-
-    //Step 1: Rewrite the lines to a general form: Ax + By = k1 and Cx + Dy = k2
-    //The normal vector is the A, B
-    let A = l1_normal.x;
-    let B = l1_normal.y;
-
-    let C = l2_normal.x;
-    let D = l2_normal.y;
-
-    //To get k we just use one point on the line
-    let k1 = (A * l1_start.x) + (B * l1_start.y);
-    let k2 = (C * l2_start.x) + (D * l2_start.y);
-
-    //Step 4: calculate the intersection point -> one solution
-    let x_intersect = (D * k1 - B * k2) / (A * D - B * C);
-    let y_intersect = (-C * k1 + A * k2) / (A * D - B * C);
-
-    let intersectPoint = new Vector2(x_intersect, y_intersect);
-    // console.log(intersectPoint)
-
-
-    const IsBetween = (a, b, c) => {
-      let isBetween = false;
-
-      //Entire line segment
-      let ab = Vector2.subtract(b, a);
-      //The intersection and the first point
-      let ac = Vector2.subtract(c, a);
-
-      //Need to check 2 things:
-      //1. If the vectors are pointing in the same direction = if the dot product is positive
-      //2. If the length of the vector between the intersection and the first point is smaller than the entire line
-      if (ab.dot(ac) > 0 && ab.lengthSq() >= ac.lengthSq()) {
-        isBetween = true;
-      }
-
-      return isBetween;
-    };
-
-    if (IsBetween(l1_start, l1_end, intersectPoint) && IsBetween(l2_start, l2_end, intersectPoint)) {
-      console.log("We have an intersection point!");
-
-      isIntersecting = true;
-    }
-
-    return isIntersecting ? intersectPoint : new Vector2();
-
-
-  }
-
-  plotPoint(vPos, color = 0xffffff, r = 1.5) {
-    let point = new PIXI.Graphics();
-    point.beginFill(color);
-    point.drawCircle(0, 0, r);
-    point.endFill();
-    point.x = vPos.x;
-    point.y = vPos.y;
-    this.pathGraphics.addChild(point);
-  }
-
-
   initVessel(_vesselData, _count) {
 
     let vessel = new PIXI.Container();
@@ -325,7 +185,7 @@ class TrackPlayer extends React.Component {
     if (!_vesselData['valid']) {
       vessel.addChild(display);
     }
-    this.vesselGraphics.addChild(vessel);
+    this.vesselLayer.addChild(vessel);
 
     vessel.data = _vesselData;
     vessel.count = _count;
@@ -341,68 +201,63 @@ class TrackPlayer extends React.Component {
     let intersected = [];
 
     for (let i = 0; i < _vesselData['trackData'].length; i++) {
-      let pos = this.cartesianFromLatLong(_vesselData['trackData'][i].lat, _vesselData['trackData'][i].lon);
+      let pos = VTPlayerUtils.cartesianFromLatLong(_vesselData['trackData'][i].lat, _vesselData['trackData'][i].lon);
       parsedTrack[i] = {x: pos[0], y: pos[1], status: _vesselData['trackData'].status};
 
-
       let pointColor = 0xff0000;
-      if (
-        _vesselData['trackData'][i].lat < this.collisionBounds.minLat && _vesselData['trackData'][i].lat > this.collisionBounds.maxLat &&
-        _vesselData['trackData'][i].lon > this.collisionBounds.minLong && _vesselData['trackData'][i].lon < this.collisionBounds.maxLong
-      ) {
-        // if point is in collide Bounds
-        pointColor = 0x00ff00;
 
-        let pStart = this.cartesianFromLatLong(_vesselData['trackData'][i].lat, _vesselData['trackData'][i].lon);
-        let pEnd = this.cartesianFromLatLong(_vesselData['trackData'][i + 1].lat, _vesselData['trackData'][i + 1].lon);
-        let l2_start = new Vector2(pStart[0], pStart[1]);
-        let l2_end = new Vector2(pEnd[0], pEnd[1]);
 
-        let intersecting = this.lineIntersecting(this.collisionBounds.collisionLineStart, this.collisionBounds.collisionLineEnd, l2_start, l2_end);
+      // check for intersections
+      let currentTrackPoint = _vesselData['trackData'][i];
+      let nextTrackPoint = _vesselData['trackData'][i + 1];
 
-        if (intersecting.x != 0 && intersecting.y != 0) {
-          pointColor = 0xf5e211;
-          intersected.push({
-            index: i,
-            crossDistance: Vector2.getDistance(this.collisionBounds.collisionLineStart, intersecting)
-          })
-          // console.log(parsedTrack[i]);
-          // parsedTrack[i].x -= 10;
-          // parsedTrack[i+1].x -= 10;
+      for (let b = 0; b < this.collisionBounds.length; b++) {
+        if (VTPlayerUtils.isInBounds(currentTrackPoint, this.collisionBounds[b])) {
+          let collisionBounds = this.collisionBounds[b];
+          pointColor = 0x00ff00;
+          let pStart = VTPlayerUtils.cartesianFromLatLong(currentTrackPoint.lat, currentTrackPoint.lon);
+          let pEnd = VTPlayerUtils.cartesianFromLatLong(nextTrackPoint.lat, nextTrackPoint.lon);
+          let l2_start = new Vector2(pStart[0], pStart[1]);
+          let l2_end = new Vector2(pEnd[0], pEnd[1]);
+
+          let intersecting = VTPlayerUtils.lineIntersecting(collisionBounds.collisionLineStart, collisionBounds.collisionLineEnd, l2_start, l2_end);
+
+          if (intersecting) {
+
+            intersected.push({
+              index: i,
+              bounds: collisionBounds,
+              crossDistance: Vector2.getDistance(collisionBounds.collisionLineStart, intersecting)
+            });
+
+            pointColor = 0xf5e211;
+          }
         }
-
       }
 
-
-      this.plotPoint(new Vector2(pos[0], pos[1]), pointColor)
+      // plot path and points
+      VTPlayerUtils.plotPoint(this.pathLayer, new Vector2(pos[0], pos[1]), pointColor);
 
       if (i < _vesselData['trackData'].length - 1) {
         let line = new PIXI.Graphics();
         line.lineStyle(1, 0x136c0e, 1);
         line.moveTo(pos[0], pos[1]);
-        let nextPos = this.cartesianFromLatLong(_vesselData['trackData'][i + 1].lat, _vesselData['trackData'][i + 1].lon);
+        let nextPos = VTPlayerUtils.cartesianFromLatLong(nextTrackPoint.lat, nextTrackPoint.lon);
         line.lineTo(nextPos[0], nextPos[1]);
-        this.pathGraphics.addChild(line);
+        this.pathLayer.addChild(line);
       }
 
     }
 
-
+    // handle intersected
     let minDistance = 3;
     if (intersected.length > 0) {
       let io = {};
       for (let j = 0; j < intersected.length; j++) {
-        // parsedTrack[intersected[j].index].x -= intersected[j].crossDistance;
-        // parsedTrack[intersected[j].index + 1].x -= intersected[j].crossDistance;
-        // console.log(intersected[j].crossDistance)
-
         io = intersected[j];
-        console.log('> ', io)
-
-        // Vector3 newSpot = oldSpotVector3 + (directionVector3.normalized * distanceFloat);
-        let v1 = new Vector2(parsedTrack[io.index].x, parsedTrack[io.index].y)
-        let v2 = new Vector2(parsedTrack[io.index + 1].x, parsedTrack[io.index + 1].y)
-        const collision_dir = Vector2.subtract(this.collisionBounds.collisionLineStart, this.collisionBounds.collisionLineEnd).normalize();
+        let v1 = new Vector2(parsedTrack[io.index].x, parsedTrack[io.index].y);
+        let v2 = new Vector2(parsedTrack[io.index + 1].x, parsedTrack[io.index + 1].y);
+        const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
         let v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
         let v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
         parsedTrack[io.index].x = v1_new.x;
@@ -410,10 +265,11 @@ class TrackPlayer extends React.Component {
         parsedTrack[io.index + 1].x = v2_new.x;
         parsedTrack[io.index + 1].y = v2_new.y;
 
-        this.plotPoint(v1_new);
-        this.plotPoint(v2_new);
+        VTPlayerUtils.plotPoint(this.pathLayer, v1_new);
+        VTPlayerUtils.plotPoint(this.pathLayer, v2_new);
       }
     }
+
 
     vessel.x = parsedTrack[0].x;
     vessel.y = parsedTrack[0].y;
@@ -453,13 +309,6 @@ class TrackPlayer extends React.Component {
   // }
 
 
-  cartesianFromLatLong(lat, long) {
-    return [
-      (long - this.GeoBounds.minLong) / (this.GeoBounds.maxLong - this.GeoBounds.minLong) * this.mapData.size.width,
-      (lat - this.GeoBounds.minLat) / (this.GeoBounds.maxLat - this.GeoBounds.minLat) * this.mapData.size.height
-    ];
-  }
-
   playTimeline() {
     this.vesselTimeline.play();
   }
@@ -475,7 +324,8 @@ class TrackPlayer extends React.Component {
 
   render() {
     const {data} = this.state;
-    if (this.pathGraphics) this.pathGraphics.visible = data.showPath;
+    if (this.pathLayer) this.pathLayer.visible = data.showPath;
+    if (this.boundsLayer) this.boundsLayer.visible = data.showBounds;
 
     return (
       <div className={'wrapper'}>
@@ -484,7 +334,8 @@ class TrackPlayer extends React.Component {
           <DatNumber path='progress' label='progress' min={0} max={1} step={0.01}/>
           <DatButton label="Play" onClick={this.playTimeline}/>
           <DatButton label="Pause" onClick={this.pauseTimeline}/>
-          <DatBoolean path='showPath' label='displayPath'/>
+          <DatBoolean path='showPath' label='showPath'/>
+          <DatBoolean path='showBounds' label='showBounds'/>
           {/*<DatColor path='feelsLike' label='Feels Like'/>*/}
         </DatGui>
         <a href={'/'}>
