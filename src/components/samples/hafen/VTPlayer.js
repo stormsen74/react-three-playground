@@ -144,8 +144,8 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 0,
-      end: 100,
+      start: 10,
+      end: 11,
       _count: 0
     };
 
@@ -264,6 +264,9 @@ class VTPlayer extends React.Component {
         parsedTrack[io.index].y = v1_new.y;
         parsedTrack[io.index + 1].x = v2_new.x;
         parsedTrack[io.index + 1].y = v2_new.y;
+
+        // convert from cartesian to lat/long
+        console.log(VTPlayerUtils.geoFromCartesian(v1_new.x, v1_new.y));
 
         VTPlayerUtils.plotPoint(this.pathLayer, v1_new);
         VTPlayerUtils.plotPoint(this.pathLayer, v2_new);

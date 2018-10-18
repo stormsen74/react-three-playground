@@ -29,6 +29,12 @@ VTPlayerUtils.cartesianFromLatLong = (lat, long) => {
   ];
 };
 
+VTPlayerUtils.geoFromCartesian = (x, y) => {
+  let lat = VTPlayerUtils.GeoBounds.minLat + (y / VTPlayerUtils.mapData.size.height * (VTPlayerUtils.GeoBounds.maxLat - VTPlayerUtils.GeoBounds.minLat))
+  let long = VTPlayerUtils.GeoBounds.minLong + (x / VTPlayerUtils.mapData.size.width * (VTPlayerUtils.GeoBounds.maxLong - VTPlayerUtils.GeoBounds.minLong))
+  return [lat, long]
+};
+
 VTPlayerUtils.plotPoint = (layer, vPos, color = 0xffffff, r = 1.5) => {
   let point = new PIXI.Graphics();
   point.beginFill(color);
