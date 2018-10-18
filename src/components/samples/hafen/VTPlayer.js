@@ -18,7 +18,7 @@ const trackData = require("./trackData/lastTrack60.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
-class TrackPlayer extends React.Component {
+class VTPlayer extends React.Component {
 
   state = {
     data: {
@@ -351,5 +351,5 @@ function mapStateToProps(state) {
   return {};
 }
 
-export default connect(mapStateToProps, {})(TrackPlayer);
+export default connect(mapStateToProps, {})(VTPlayer);
 

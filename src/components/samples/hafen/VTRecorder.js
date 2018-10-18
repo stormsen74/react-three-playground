@@ -1,21 +1,47 @@
 import axios from 'axios';
 import saveAs from 'file-saver';
 import {Vector2} from "../../../utils/vector2";
+import VTRecorderUtils from "./VTRecorderUtils";
 
-class VesselTrackerConnector {
+class VTRecorder {
 
   constructor(_map) {
 
     this.mapReferenz = _map;
-    this.mapRange = _map.mapRange;
+
+    this.timerData = {
+      timeStep: 60,
+      currentStep: 0
+    };
 
     this.vesselPool = [];
     this.trackLength = 0;
 
     this.load = this.load.bind(this);
+
   }
 
+
+  startRecord() {
+    if (!this.recordStep) {
+      this.load();
+      this.recordStep = window.setInterval(this.load, this.timerData.timeStep * 1000);
+    }
+  }
+
+  stopRecord() {
+    clearInterval(this.recordStep);
+    this.recordStep = null;
+    this.timerData.currentStep = 0;
+    this.vesselPool = [];
+
+    this.mapReferenz.resetTimerDisplay();
+    this.mapReferenz.onUpdateTrackerData(this.vesselPool);
+  }
+
+
   load() {
+    this.mapReferenz.restartTimerDisplay();
     this.loadData(this);
   }
 
@@ -66,7 +92,7 @@ class VesselTrackerConnector {
   }
 
   inMapRange(lat, lon) {
-    return lat < this.mapRange.minLat && lat > this.mapRange.maxLat && lon > this.mapRange.minLong && lon < this.mapRange.maxLong;
+    return lat < VTRecorderUtils.mapRange.minLat && lat > VTRecorderUtils.mapRange.maxLat && lon > VTRecorderUtils.mapRange.minLong && lon < VTRecorderUtils.mapRange.maxLong;
   }
 
   createVesselData(vesselData) {
@@ -89,7 +115,8 @@ class VesselTrackerConnector {
         lat: this.getFixed(vesselData['aisPosition']['lat']),
         lon: this.getFixed(vesselData['aisPosition']['lon']),
         sog: vesselData['aisPosition']['sog'],
-        cog: vesselData['aisPosition']['cog']
+        cog: vesselData['aisPosition']['cog'],
+        hdg: vesselData['aisPosition']['hdg']
       },
       trackData: [
         {
@@ -97,7 +124,8 @@ class VesselTrackerConnector {
           lat: this.getFixed(vesselData['aisPosition']['lat']),
           lon: this.getFixed(vesselData['aisPosition']['lon']),
           sog: vesselData['aisPosition']['sog'],
-          cog: vesselData['aisPosition']['cog']
+          cog: vesselData['aisPosition']['cog'],
+          hdg: vesselData['aisPosition']['hdg']
         }
       ]
     }
@@ -138,6 +166,7 @@ class VesselTrackerConnector {
         vesselPool[i]['aisPosition']['lon'] = this.getFixed(result[0]['aisPosition']['lon']);
         vesselPool[i]['aisPosition']['sog'] = result[0]['aisPosition']['sog'];
         vesselPool[i]['aisPosition']['cog'] = result[0]['aisPosition']['cog'];
+        vesselPool[i]['aisPosition']['hdg'] = result[0]['aisPosition']['hdg'];
 
         vesselPool[i]['trackData'].push(
           {
@@ -145,29 +174,31 @@ class VesselTrackerConnector {
             lat: this.getFixed(result[0]['aisPosition']['lat']),
             lon: this.getFixed(result[0]['aisPosition']['lon']),
             sog: result[0]['aisPosition']['sog'],
-            cog: result[0]['aisPosition']['cog']
+            cog: result[0]['aisPosition']['cog'],
+            hdg: result[0]['aisPosition']['hdg']
           }
         );
 
         // if movement < (.00002) => set status 'moored' => fill position with last position
         // maybe check for ['sog']?!
-        // if (vesselPool[i]['trackData'].length >= 1) {
-        //   const pathArrayLength = vesselPool[i]['trackData'].length;
-        //   const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
-        //   if (traveledDistance < .00005  || result[0]['aisPosition']['sog'] <= .3) {
-        //     // console.log(result[0]['geoDetails']['status'], traveledDistance);
-        //     vesselPool[i]['status'] = 'static';
-        //     let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
-        //     vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
-        //       {
-        //         status: 'static',
-        //         lat: lastTrackData['lat'],
-        //         lon: lastTrackData['lon'],
-        //         sog: result[0]['aisPosition']['sog'],
-        //         cog: result[0]['aisPosition']['cog']
-        //       }
-        //   }
-        // }
+        if (vesselPool[i]['trackData'].length >= 1) {
+          const pathArrayLength = vesselPool[i]['trackData'].length;
+          const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
+          if (traveledDistance < .00005  || result[0]['aisPosition']['sog'] <= .3) {
+            // console.log(result[0]['geoDetails']['status'], traveledDistance);
+            vesselPool[i]['status'] = 'static';
+            let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
+            vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
+              {
+                status: 'static',
+                lat: lastTrackData['lat'],
+                lon: lastTrackData['lon'],
+                sog: result[0]['aisPosition']['sog'],
+                cog: result[0]['aisPosition']['cog'],
+                hdg: result[0]['aisPosition']['hdg']
+              }
+          }
+        }
 
         // check => in mapRange
         if (!vesselPool[i]['inMapRange'] && this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon'])) vesselPool[i]['inMapRange'] = true;
@@ -196,7 +227,8 @@ class VesselTrackerConnector {
             lat: lastTrackData['lat'],
             lon: lastTrackData['lon'],
             sog: 0,
-            cog: lastTrackData['cog']
+            cog: lastTrackData['cog'],
+            hdg: lastTrackData['hdg']
           }
         );
       }
@@ -222,7 +254,8 @@ class VesselTrackerConnector {
               lat: this.getFixed(newVessel['aisPosition']['lat']),
               lon: this.getFixed(newVessel['aisPosition']['lon']),
               sog: newVessel['aisPosition']['sog'],
-              cog: newVessel['aisPosition']['cog']
+              cog: newVessel['aisPosition']['cog'],
+              hdg: newVessel['aisPosition']['hdg']
             }
           )
         }
@@ -250,8 +283,10 @@ class VesselTrackerConnector {
 
     console.log('=> ', this.vesselPool.length, numVessels);
 
+
     this.updatePool(this.vesselPool, data);
 
+    this.timerData.currentStep++;
     this.mapReferenz.onUpdateTrackerData(this.vesselPool);
 
 
@@ -284,7 +319,7 @@ class VesselTrackerConnector {
 }
 
 
-export default VesselTrackerConnector
+export default VTRecorder
 
 
 

@@ -3,13 +3,13 @@ import connect from "react-redux/es/connect/connect";
 import {Button} from 'reactstrap';
 import 'gsap/TweenMax';
 import CloseIcon from 'core/icons/close.inline.svg';
-import map from 'components/samples/hafen/images/map.png';
 import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRange.png';
 import * as PIXI from 'pixi.js'
 
 import '../Scene.scss'
 import 'bootstrap/dist/css/bootstrap.css';
-import VesselTrackerConnector from "./VesselTrackerConnector";
+import VTRecorder from "./VTRecorder";
+import VTRecorderUtils from "./VTRecorderUtils";
 
 // Nutzername: jwu
 // Passwort: 9j583t
@@ -23,10 +23,10 @@ class HafenMap extends React.Component {
   constructor(props) {
     super(props);
 
-    this.draw = this.draw.bind(this);
-    this.onResize = this.onResize.bind(this);
     this.loadReady = this.loadReady.bind(this);
-    this.onClickSave = this.onClickSave.bind(this);
+    this.onSaveData = this.onSaveData.bind(this);
+    this.onStartRecord = this.onStartRecord.bind(this);
+    this.onStopRecord = this.onStopRecord.bind(this);
 
     this.strokeParams = {
       strokeLength: 100,
@@ -41,58 +41,56 @@ class HafenMap extends React.Component {
       currentStep: 0
     };
 
-    this.GeoBounds = {
-      minLong: 9.7538,
-      maxLong: 10.0948,
-      minLat: 53.5743,
-      maxLat: 53.4605
-    };
-
-    // this.mapRange = {
-    //   minLong: 9.9165,
-    //   maxLong: 9.9755,
-    //   minLat: 53.5503,
-    //   maxLat: 53.5148
-    // };
-
-    this.mapRange = {
-      minLong: 9.9174	,
-      maxLong: 9.9761,
-      minLat: 53.5497,
-      maxLat: 53.5150
-    };
-
-    this.mapData = {
-      size: {
-        width: 1920,
-        height: 1077
-      }
-    };
-
-    this.timerData = {
-      timeStep: 60,
-      currentStep: 0
-    }
-
   }
 
-  onClickSave() {
+  onStartRecord() {
+    this.vtc.startRecord();
+  }
+
+  onStopRecord() {
+    this.vtc.stopRecord();
+  }
+
+  onSaveData() {
     this.vtc.saveData();
   }
 
   componentDidMount() {
 
-    this.vtc = new VesselTrackerConnector(this);
+    this.vtc = new VTRecorder(this);
 
     this.initialLoad();
-    // requestAnimationFrame(this.draw);
 
-    window.addEventListener('resize', this.onResize, true);
-    this.onResize();
   }
 
   componentWillUnmount() {
-    window.removeEventListener('resize', this.onResize, true);
+  }
+
+  initialLoad() {
+    PIXI.loader.add(vesselTrackerRange).load(this.loadReady);
+  }
+
+  loadReady() {
+    this.initStage();
+
+    let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
+    this.app.stage.addChild(sprite);
+
+    this.collisionLayer = new PIXI.Container();
+    this.pathGraphics = new PIXI.Container();
+    this.pointGraphics = new PIXI.Container();
+    this.vesselGraphics = new PIXI.Container();
+
+    this.app.stage.addChild(this.collisionLayer);
+    this.app.stage.addChild(this.pathGraphics);
+    this.app.stage.addChild(this.pointGraphics);
+    this.app.stage.addChild(this.vesselGraphics);
+
+    this.plotMapRange();
+    this.plotCollisionBounds(VTRecorderUtils.collisionBounds[0], this.collisionLayer);
+    this.plotCollisionBounds(VTRecorderUtils.collisionBounds[1], this.collisionLayer);
+
+    this.show();
   }
 
   show() {
@@ -100,14 +98,10 @@ class HafenMap extends React.Component {
   }
 
 
-  initialLoad() {
-    PIXI.loader.add(vesselTrackerRange).load(this.loadReady);
-  }
-
   initStage() {
     this.app = new PIXI.Application({
-        width: this.mapData.size.width,
-        height: this.mapData.size.height,
+        width: VTRecorderUtils.mapData.size.width,
+        height: VTRecorderUtils.mapData.size.height,
         antialias: true,    // default: false
         transparent: false, // default: false
         resolution: 1       // default: 1
@@ -117,111 +111,6 @@ class HafenMap extends React.Component {
     this.app.view.id = 'pixi-app-view';
     this.canvasWrapper.appendChild(this.app.view);
 
-  }
-
-  plotGeoRect() {
-
-    // let display = new PIXI.Text(_vesselData['mmsi'], {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xcc660000, align: 'center'});
-
-    let topLeft = this.cartesianFromLatLong(this.mapRange.minLat, this.mapRange.minLong);
-    let topRight = this.cartesianFromLatLong(this.mapRange.minLat, this.mapRange.maxLong);
-    let bottomRight = this.cartesianFromLatLong(this.mapRange.maxLat, this.mapRange.maxLong);
-    let bottomLeft = this.cartesianFromLatLong(this.mapRange.maxLat, this.mapRange.minLong);
-
-    let shape = new PIXI.Graphics();
-    // shape.beginFill(0xc30000, .1);
-    shape.lineStyle(.5, 0x062f3c);
-    shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
-    shape.endFill();
-    this.app.stage.addChild(shape);
-
-    for (let i = 0; i <= 3; i++) {
-      let point = new PIXI.Graphics();
-      point.beginFill(0x000000);
-      point.drawCircle(0, 0, 1.5);
-      point.endFill();
-
-      let pos = [];
-      switch (i) {
-        case 0:
-          pos = topLeft;
-          break;
-        case 1:
-          pos = topRight;
-          break;
-        case 2:
-          pos = bottomRight;
-          break;
-        case 3:
-          pos = bottomLeft;
-          break;
-      }
-
-      point.x = pos[0];
-      point.y = pos[1];
-      this.app.stage.addChild(point);
-    }
-
-  }
-
-  loadReady() {
-    this.initStage();
-
-    let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
-    this.app.stage.addChild(sprite);
-
-    this.pathGraphics = new PIXI.Container();
-    this.app.stage.addChild(this.pathGraphics);
-
-    this.pointGraphics = new PIXI.Container();
-    this.app.stage.addChild(this.pointGraphics);
-
-    this.vesselGraphics = new PIXI.Container();
-    this.app.stage.addChild(this.vesselGraphics);
-
-    this.plotGeoRect();
-
-
-    this.show();
-
-    this.vtc.load();
-
-    this.startTimer();
-
-  }
-
-
-  resetStroke() {
-    TweenMax.killTweensOf(['#circle', this.strokeParams]);
-    this.strokeParams.strokeLength = 100;
-    TweenMax.set('#circle', {strokeDasharray: '0 100', stroke: this.strokeParams.colors[0]});
-
-    TweenMax.to('#circle', this.timerData.timeStep, {stroke: this.strokeParams.colors[1]});
-    TweenMax.to(this.strokeParams, this.timerData.timeStep, {
-      ease: Power0.easeNone,
-      strokeLength: 0,
-      onUpdate: () => {
-        const dash = String(this.strokeParams.strokeLength) + ' 100';
-        TweenMax.set('#circle', {
-          strokeDasharray: dash
-        })
-      }
-    });
-  }
-
-
-  startTimer() {
-    TweenMax.delayedCall(this.timerData.timeStep, this.stepTimer, null, this);
-
-    this.resetStroke()
-  }
-
-  stepTimer() {
-    console.log('vtc-reqest');
-    this.timerData.currentStep++;
-    this.setState({currentStep: this.timerData.currentStep});
-    this.vtc.load();
-    this.startTimer();
   }
 
   getColorByStatus(status) {
@@ -259,17 +148,17 @@ class HafenMap extends React.Component {
 
     for (let i = 0; i < pathArray.length; i++) {
       if (i == 0) {
-        const pos = this.cartesianFromLatLong(pathArray[0].lat, pathArray[0].lon);
+        const pos = VTRecorderUtils.cartesianFromLatLong(pathArray[0].lat, pathArray[0].lon);
         path.moveTo(pos[0], pos[1]);
       } else {
-        const pos = this.cartesianFromLatLong(pathArray[i].lat, pathArray[i].lon);
+        const pos = VTRecorderUtils.cartesianFromLatLong(pathArray[i].lat, pathArray[i].lon);
         path.lineStyle(1, 0x47f62a, vesselData.inMapRange ? 1 : .25);
         path.lineTo(pos[0], pos[1]);
       }
     }
 
     for (let j = 0; j < pathArray.length - 1; j++) {
-      const pos = this.cartesianFromLatLong(pathArray[j].lat, pathArray[j].lon);
+      const pos = VTRecorderUtils.cartesianFromLatLong(pathArray[j].lat, pathArray[j].lon);
       points.beginFill(0x125e0a, vesselData.inMapRange ? 1 : .25);
       points.drawCircle(pos[0], pos[1], 1);
       points.endFill();
@@ -281,12 +170,13 @@ class HafenMap extends React.Component {
   plotVessel(vesselData) {
 
     // initial => show all / next step only moving vessels ...
-    if (this.timerData.currentStep > 0) {
+    if (this.vtc.timerData.currentStep > 0) {
       if (!vesselData.hasMoved) return;
+      if (!vesselData.valid) return;
     }
 
     let vessel = new PIXI.Graphics();
-    vessel.mmsi = vesselData['mmsi']
+    vessel.mmsi = vesselData['mmsi'];
     vessel.interactive = true;
     vessel.cursor = 'pointer';
     vessel.on('click', (event) => {
@@ -296,16 +186,30 @@ class HafenMap extends React.Component {
     vessel.beginFill(this.getColorByStatus(vesselData.status), vesselData.inMapRange ? 1 : .25);
     vessel.drawPolygon([0, -5, 4, 5, -4, 5]);
     vessel.endFill();
-    let pos = this.cartesianFromLatLong(vesselData.aisPosition.lat, vesselData.aisPosition.lon);
+    let pos = VTRecorderUtils.cartesianFromLatLong(vesselData.aisPosition.lat, vesselData.aisPosition.lon);
     vessel.x = pos[0];
     vessel.y = pos[1];
-    vessel.rotation = vesselData.aisPosition.cog * 0.0174533; // rad to deg
-
+    vessel.rotation = vesselData.aisPosition.cog * 0.0174533; // deg to rad
     this.vesselGraphics.addChild(vessel);
+
+    // TODO => refine TrackPath
+    if (vesselData.aisPosition.hdg != 511) {
+      let line = new PIXI.Graphics();
+      line.lineStyle(1, 0x0a17c5, 1);
+      line.moveTo(0, 0);
+      line.lineTo(0, -12);
+      line.x = vessel.x;
+      line.y = vessel.y;
+      line.rotation = vesselData.aisPosition.hdg * 0.0174533; // deg to rad
+      this.vesselGraphics.addChild(line);
+
+      if (vesselData.status == 'static' || vesselData.status == 'moored') {
+        vessel.rotation = vesselData.aisPosition.hdg * 0.0174533; // deg to rad
+      }
+    }
   }
 
   onUpdateTrackerData(vesselPool) {
-
 
     for (let i = 0; i < this.vesselGraphics.children.length; i++) {
       this.vesselGraphics.children[i].destroy();
@@ -329,8 +233,9 @@ class HafenMap extends React.Component {
         movedVessels++
       }
 
-      if (vesselPool[i]['status'] === 'moving') {
-        this.plotVesselPath(vesselPool[i]['trackData'], vesselPool[i])
+      // Todo display valid ?
+      if (vesselPool[i]['status'] === 'moving' && vesselPool[i]['valid']) {
+        this.plotVesselPath(vesselPool[i]['trackData'], vesselPool[i]);
         movingVessels++;
       }
     }
@@ -340,41 +245,118 @@ class HafenMap extends React.Component {
     this.setState({vesselsInMapRange: vesselsInMapRange});
     this.setState({movingVessels: movingVessels});
     this.setState({movedVessels: movedVessels});
-
-
-  }
-
-  cartesianFromLatLong(lat, long) {
-    return [
-      (long - this.GeoBounds.minLong) / (this.GeoBounds.maxLong - this.GeoBounds.minLong) * this.mapData.size.width,
-      (lat - this.GeoBounds.minLat) / (this.GeoBounds.maxLat - this.GeoBounds.minLat) * this.mapData.size.height
-    ];
-  }
-
-
-  onResize() {
-  }
-
-
-  update() {
+    this.setState({currentStep: this.vtc.timerData.currentStep});
 
   }
 
+  plotCollisionBounds(boundsObject, layer) {
+    let topLeft = VTRecorderUtils.cartesianFromLatLong(boundsObject.minLat, boundsObject.minLong);
+    let topRight = VTRecorderUtils.cartesianFromLatLong(boundsObject.minLat, boundsObject.maxLong);
+    let bottomLeft = VTRecorderUtils.cartesianFromLatLong(boundsObject.maxLat, boundsObject.minLong);
 
-  draw() {
+    let container = new PIXI.Container();
+    let shape = new PIXI.Graphics();
+    shape.beginFill(0xd37f11, .2);
+    // shape.lineStyle(.5, 0x062f3c);
+    shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
+    shape.endFill();
 
-    requestAnimationFrame(this.draw);
+    container.addChild(shape);
+    layer.addChild(container);
 
-    this.update();
+    this.plotPoint(layer, boundsObject.collisionLineStart, 0x000000, 1, 'bounds');
+    this.plotPoint(layer, boundsObject.collisionLineEnd, 0x000000, 1, 'bounds');
+    let line = new PIXI.Graphics();
+    line.lineStyle(.5, 0x062f3c);
+    line.moveTo(boundsObject.collisionLineStart.x, boundsObject.collisionLineStart.y)
+    line.lineTo(boundsObject.collisionLineEnd.x, boundsObject.collisionLineEnd.y)
+    layer.addChild(line);
+
+  };
+
+  plotPoint(layer, vPos, color = 0xffffff, r = 1.5) {
+    let point = new PIXI.Graphics();
+    point.beginFill(color);
+    point.drawCircle(0, 0, r);
+    point.endFill();
+    point.x = vPos.x;
+    point.y = vPos.y;
+    layer.addChild(point);
+  };
+
+  plotMapRange() {
+
+    let topLeft = VTRecorderUtils.cartesianFromLatLong(VTRecorderUtils.mapRange.minLat, VTRecorderUtils.mapRange.minLong);
+    let topRight = VTRecorderUtils.cartesianFromLatLong(VTRecorderUtils.mapRange.minLat, VTRecorderUtils.mapRange.maxLong);
+    let bottomRight = VTRecorderUtils.cartesianFromLatLong(VTRecorderUtils.mapRange.maxLat, VTRecorderUtils.mapRange.maxLong);
+    let bottomLeft = VTRecorderUtils.cartesianFromLatLong(VTRecorderUtils.mapRange.maxLat, VTRecorderUtils.mapRange.minLong);
+
+    let shape = new PIXI.Graphics();
+    // shape.beginFill(0xc30000, .1);
+    shape.lineStyle(.5, 0x062f3c);
+    shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
+    shape.endFill();
+    this.app.stage.addChild(shape);
+
+    for (let i = 0; i <= 3; i++) {
+      let point = new PIXI.Graphics();
+      point.beginFill(0x000000);
+      point.drawCircle(0, 0, 1.5);
+      point.endFill();
+
+      let pos = [];
+      switch (i) {
+        case 0:
+          pos = topLeft;
+          break;
+        case 1:
+          pos = topRight;
+          break;
+        case 2:
+          pos = bottomRight;
+          break;
+        case 3:
+          pos = bottomLeft;
+          break;
+      }
+
+      point.x = pos[0];
+      point.y = pos[1];
+      this.app.stage.addChild(point);
+    }
+
   }
 
+  resetTimerDisplay() {
+    TweenMax.killTweensOf(['#circle', this.strokeParams]);
+    this.strokeParams.strokeLength = 100;
+    TweenMax.set('#circle', {strokeDasharray: '0 100', stroke: this.strokeParams.colors[0]});
+  }
+
+  restartTimerDisplay() {
+    TweenMax.killTweensOf(['#circle', this.strokeParams]);
+    this.strokeParams.strokeLength = 100;
+    TweenMax.set('#circle', {strokeDasharray: '0 100', stroke: this.strokeParams.colors[0]});
+
+    TweenMax.to('#circle', this.vtc.timerData.timeStep, {stroke: this.strokeParams.colors[1]});
+    TweenMax.to(this.strokeParams, this.vtc.timerData.timeStep, {
+      ease: Power0.easeNone,
+      strokeLength: 0,
+      onUpdate: () => {
+        const dash = String(this.strokeParams.strokeLength) + ' 100';
+        TweenMax.set('#circle', {
+          strokeDasharray: dash
+        })
+      }
+    });
+  }
 
   render() {
     let indicatorMarkup =
       <div style={{position: 'absolute', right: '5px', top: '5px'}}>
         <svg
           viewBox="0 0 36 36" className="circular-chart">
-          <path className={'circle'} id={'circle'} strokeDasharray="50, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path className={'circle'} id={'circle'} strokeDasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
         </svg>
       </div>;
 
@@ -389,7 +371,13 @@ class HafenMap extends React.Component {
           <div style={{position: 'absolute', top: '105px', right: '5px', width: '185px'}}>{'movingVessels: ' + this.state.movingVessels}</div>
           <div style={{position: 'absolute', top: '125px', right: '5px', width: '185px'}}>{'movedVessels: ' + this.state.movedVessels}</div>
           <div style={{position: 'absolute', top: '155px', right: '5px', width: '185px'}}>
-            <Button onClick={() => this.onClickSave()} color="success">Save Data</Button>
+            <Button onClick={() => this.onStartRecord()} color="success">Start</Button>
+          </div>
+          <div style={{position: 'absolute', top: '155px', right: '-60px', width: '185px'}}>
+            <Button onClick={() => this.onStopRecord()} color="danger">Stop</Button>
+          </div>
+          <div style={{position: 'absolute', top: '200px', right: '5px', width: '185px'}}>
+            <Button onClick={() => this.onSaveData()} color="warning">Save Data</Button>
           </div>
         </div>
         <a href={'/'}>

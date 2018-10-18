@@ -5,7 +5,7 @@ import IndexPage from 'pages/IndexPage';
 import NotFoundPage from 'pages/NotFoundPage';
 import Cube from "../components/samples/cube/Cube";
 import HafenMap from "../components/samples/hafen/HafenMap";
-import TrackPlayer from "../components/samples/hafen/TrackPlayer";
+import TrackPlayer from "../components/samples/hafen/VTPlayer";
 
 class IndexRoutes extends React.Component {
   constructor(props) {
