@@ -1,6 +1,5 @@
 import {Vector2} from "../../../utils/vector2";
 
-
 const VTRecorderUtils = {};
 
 VTRecorderUtils.GeoBounds = {
@@ -31,10 +30,74 @@ VTRecorderUtils.getVectorFromGeoPoint = (lat, long) => {
 
 
 VTRecorderUtils.cartesianFromLatLong = (lat, long) => {
-  return [
-    (long - VTRecorderUtils.GeoBounds.minLong) / (VTRecorderUtils.GeoBounds.maxLong - VTRecorderUtils.GeoBounds.minLong) * VTRecorderUtils.mapData.size.width,
-    (lat - VTRecorderUtils.GeoBounds.minLat) / (VTRecorderUtils.GeoBounds.maxLat - VTRecorderUtils.GeoBounds.minLat) * VTRecorderUtils.mapData.size.height
-  ];
+  const x = (long - VTRecorderUtils.GeoBounds.minLong) / (VTRecorderUtils.GeoBounds.maxLong - VTRecorderUtils.GeoBounds.minLong) * VTRecorderUtils.mapData.size.width;
+  const y = (lat - VTRecorderUtils.GeoBounds.minLat) / (VTRecorderUtils.GeoBounds.maxLat - VTRecorderUtils.GeoBounds.minLat) * VTRecorderUtils.mapData.size.height;
+  return [x, y];
+};
+
+VTRecorderUtils.geoFromCartesian = (x, y) => {
+  const lat = VTRecorderUtils.GeoBounds.minLat + (y / VTRecorderUtils.mapData.size.height * (VTRecorderUtils.GeoBounds.maxLat - VTRecorderUtils.GeoBounds.minLat));
+  const long = VTRecorderUtils.GeoBounds.minLong + (x / VTRecorderUtils.mapData.size.width * (VTRecorderUtils.GeoBounds.maxLong - VTRecorderUtils.GeoBounds.minLong));
+  return [lat, long]
+};
+
+VTRecorderUtils.isInBounds = (trackPoint, boundsObject) => {
+  return trackPoint.lat < boundsObject.minLat && trackPoint.lat > boundsObject.maxLat && trackPoint.lon > boundsObject.minLong && trackPoint.lon < boundsObject.maxLong
+};
+
+VTRecorderUtils.lineIntersecting = (l1_start, l1_end, l2_start, l2_end) => {
+
+  let isIntersecting = false;
+
+  //Direction of the lines
+  const l1_dir = Vector2.subtract(l1_end, l1_start).normalize();
+  const l2_dir = Vector2.subtract(l2_end, l2_start).normalize();
+
+  //If we know the direction we can get the normal vector to each line
+  const l1_normal = new Vector2(-l1_dir.y, l1_dir.x);
+  const l2_normal = new Vector2(-l2_dir.y, l2_dir.x);
+
+  //Step 1: Rewrite the lines to a general form: Ax + By = k1 and Cx + Dy = k2
+  //The normal vector is the A, B
+  const A = l1_normal.x;
+  const B = l1_normal.y;
+
+  const C = l2_normal.x;
+  const D = l2_normal.y;
+
+  //To get k we just use one point on the line
+  const k1 = (A * l1_start.x) + (B * l1_start.y);
+  const k2 = (C * l2_start.x) + (D * l2_start.y);
+
+  //Step 4: calculate the intersection point -> one solution
+  const x_intersect = (D * k1 - B * k2) / (A * D - B * C);
+  const y_intersect = (-C * k1 + A * k2) / (A * D - B * C);
+
+  const intersectPoint = new Vector2(x_intersect, y_intersect);
+
+  const IsBetween = (a, b, c) => {
+    let isBetween = false;
+
+    //Entire line segment
+    const ab = Vector2.subtract(b, a);
+    //The intersection and the first point
+    const ac = Vector2.subtract(c, a);
+
+    //Need to check 2 things:
+    //1. If the vectors are pointing in the same direction = if the dot product is positive
+    //2. If the length of the vector between the intersection and the first point is smaller than the entire line
+    if (ab.dot(ac) > 0 && ab.lengthSq() >= ac.lengthSq()) {
+      isBetween = true;
+    }
+
+    return isBetween;
+  };
+
+  if (IsBetween(l1_start, l1_end, intersectPoint) && IsBetween(l2_start, l2_end, intersectPoint)) {
+    isIntersecting = true;
+  }
+
+  return isIntersecting ? intersectPoint : false
 };
 
 

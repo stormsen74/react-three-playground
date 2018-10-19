@@ -23,15 +23,14 @@ VTPlayerUtils.getVectorFromGeoPoint = (lat, long) => {
 };
 
 VTPlayerUtils.cartesianFromLatLong = (lat, long) => {
-  return [
-    (long - VTPlayerUtils.GeoBounds.minLong) / (VTPlayerUtils.GeoBounds.maxLong - VTPlayerUtils.GeoBounds.minLong) * VTPlayerUtils.mapData.size.width,
-    (lat - VTPlayerUtils.GeoBounds.minLat) / (VTPlayerUtils.GeoBounds.maxLat - VTPlayerUtils.GeoBounds.minLat) * VTPlayerUtils.mapData.size.height
-  ];
+  const x = (long - VTPlayerUtils.GeoBounds.minLong) / (VTPlayerUtils.GeoBounds.maxLong - VTPlayerUtils.GeoBounds.minLong) * VTPlayerUtils.mapData.size.width;
+  const y = (lat - VTPlayerUtils.GeoBounds.minLat) / (VTPlayerUtils.GeoBounds.maxLat - VTPlayerUtils.GeoBounds.minLat) * VTPlayerUtils.mapData.size.height
+  return [x, y];
 };
 
 VTPlayerUtils.geoFromCartesian = (x, y) => {
-  let lat = VTPlayerUtils.GeoBounds.minLat + (y / VTPlayerUtils.mapData.size.height * (VTPlayerUtils.GeoBounds.maxLat - VTPlayerUtils.GeoBounds.minLat))
-  let long = VTPlayerUtils.GeoBounds.minLong + (x / VTPlayerUtils.mapData.size.width * (VTPlayerUtils.GeoBounds.maxLong - VTPlayerUtils.GeoBounds.minLong))
+  const lat = VTPlayerUtils.GeoBounds.minLat + (y / VTPlayerUtils.mapData.size.height * (VTPlayerUtils.GeoBounds.maxLat - VTPlayerUtils.GeoBounds.minLat))
+  const long = VTPlayerUtils.GeoBounds.minLong + (x / VTPlayerUtils.mapData.size.width * (VTPlayerUtils.GeoBounds.maxLong - VTPlayerUtils.GeoBounds.minLong))
   return [lat, long]
 };
 
@@ -43,6 +42,14 @@ VTPlayerUtils.plotPoint = (layer, vPos, color = 0xffffff, r = 1.5) => {
   point.x = vPos.x;
   point.y = vPos.y;
   layer.addChild(point);
+};
+
+VTPlayerUtils.plotLine = (layer, v1, v2, color = 0xffffff) => {
+  let line = new PIXI.Graphics();
+  line.lineStyle(1, color, 1);
+  line.moveTo(v1.x, v1.y);
+  line.lineTo(v2.x, v2.y);
+  layer.addChild(line);
 };
 
 VTPlayerUtils.plotCollisionBounds = (boundsObject, layer) => {
@@ -102,38 +109,38 @@ VTPlayerUtils.lineIntersecting = (l1_start, l1_end, l2_start, l2_end) => {
   let isIntersecting = false;
 
   //Direction of the lines
-  let l1_dir = Vector2.subtract(l1_end, l1_start).normalize();
-  let l2_dir = Vector2.subtract(l2_end, l2_start).normalize();
+  const l1_dir = Vector2.subtract(l1_end, l1_start).normalize();
+  const l2_dir = Vector2.subtract(l2_end, l2_start).normalize();
 
   //If we know the direction we can get the normal vector to each line
-  let l1_normal = new Vector2(-l1_dir.y, l1_dir.x);
-  let l2_normal = new Vector2(-l2_dir.y, l2_dir.x);
+  const l1_normal = new Vector2(-l1_dir.y, l1_dir.x);
+  const l2_normal = new Vector2(-l2_dir.y, l2_dir.x);
 
   //Step 1: Rewrite the lines to a general form: Ax + By = k1 and Cx + Dy = k2
   //The normal vector is the A, B
-  let A = l1_normal.x;
-  let B = l1_normal.y;
+  const A = l1_normal.x;
+  const B = l1_normal.y;
 
-  let C = l2_normal.x;
-  let D = l2_normal.y;
+  const C = l2_normal.x;
+  const D = l2_normal.y;
 
   //To get k we just use one point on the line
-  let k1 = (A * l1_start.x) + (B * l1_start.y);
-  let k2 = (C * l2_start.x) + (D * l2_start.y);
+  const k1 = (A * l1_start.x) + (B * l1_start.y);
+  const k2 = (C * l2_start.x) + (D * l2_start.y);
 
   //Step 4: calculate the intersection point -> one solution
-  let x_intersect = (D * k1 - B * k2) / (A * D - B * C);
-  let y_intersect = (-C * k1 + A * k2) / (A * D - B * C);
+  const x_intersect = (D * k1 - B * k2) / (A * D - B * C);
+  const y_intersect = (-C * k1 + A * k2) / (A * D - B * C);
 
-  let intersectPoint = new Vector2(x_intersect, y_intersect);
+  const intersectPoint = new Vector2(x_intersect, y_intersect);
 
   const IsBetween = (a, b, c) => {
     let isBetween = false;
 
     //Entire line segment
-    let ab = Vector2.subtract(b, a);
+    const ab = Vector2.subtract(b, a);
     //The intersection and the first point
-    let ac = Vector2.subtract(c, a);
+    const ac = Vector2.subtract(c, a);
 
     //Need to check 2 things:
     //1. If the vectors are pointing in the same direction = if the dot product is positive

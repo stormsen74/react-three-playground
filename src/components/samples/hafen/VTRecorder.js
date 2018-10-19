@@ -184,7 +184,7 @@ class VTRecorder {
         if (vesselPool[i]['trackData'].length >= 1) {
           const pathArrayLength = vesselPool[i]['trackData'].length;
           const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
-          if (traveledDistance < .00005  || result[0]['aisPosition']['sog'] <= .3) {
+          if (traveledDistance < .00005 || result[0]['aisPosition']['sog'] <= .3) {
             // console.log(result[0]['geoDetails']['status'], traveledDistance);
             vesselPool[i]['status'] = 'static';
             let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
@@ -292,9 +292,80 @@ class VTRecorder {
 
   }
 
-  // ——————————————————————————————————————————————————
-  // public methods
-  // ——————————————————————————————————————————————————
+
+  validateAndOptimize(vesselPool) {
+    for (let i = 0; i < vesselPool.length; i++) {
+
+      let hasMoved = vesselPool[i]['hasMoved'];
+      let inMapRange = vesselPool[i]['inMapRange'];
+      let validData = vesselPool[i]['valid'];
+
+      if (hasMoved && inMapRange && validData) {
+        this.optimizeTrackData(vesselPool[i]);
+      }
+    }
+  }
+
+
+  optimizeTrackData(_vesselData) {
+    console.log('optimize', _vesselData['mmsi'])
+
+    let intersected = [];
+    for (let i = 0; i < _vesselData['trackData'].length; i++) {
+
+      const currentTrackPoint = _vesselData['trackData'][i];
+      const nextTrackPoint = _vesselData['trackData'][i + 1];
+
+      // check for intersections
+      for (let b = 0; b < VTRecorderUtils.collisionBounds.length; b++) {
+        if (VTRecorderUtils.isInBounds(currentTrackPoint, VTRecorderUtils.collisionBounds[b])) {
+          const collisionBounds = VTRecorderUtils.collisionBounds[b];
+          const line_start = VTRecorderUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon);
+          const line_end = VTRecorderUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon);
+          const intersecting = VTRecorderUtils.lineIntersecting(collisionBounds.collisionLineStart, collisionBounds.collisionLineEnd, line_start, line_end);
+          if (intersecting) {
+            console.log('intersected', _vesselData['mmsi'], Vector2.getDistance(collisionBounds.collisionLineStart, intersecting));
+            intersected.push({
+              index: i,
+              bounds: collisionBounds,
+              crossDistance: Vector2.getDistance(collisionBounds.collisionLineStart, intersecting)
+            });
+          }
+        }
+      }
+
+    }
+
+    // handle intersected
+    let minDistance = 5; // = 15m (4K projected 1m = .333px)
+    if (intersected.length > 0) {
+      let io = {};
+      for (let j = 0; j < intersected.length; j++) {
+        io = intersected[j];
+        const pos1 = VTRecorderUtils.cartesianFromLatLong(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
+        const pos2 = VTRecorderUtils.cartesianFromLatLong(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
+        const v1 = new Vector2(pos1[0], pos1[1]);
+        const v2 = new Vector2(pos2[0], pos2[1]);
+        const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
+        const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
+        const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
+
+        // convert back from cartesian to lat/long
+        const newGeoPoint1 = VTRecorderUtils.geoFromCartesian(v1_new.x, v1_new.y);
+        const newGeoPoint2 = VTRecorderUtils.geoFromCartesian(v2_new.x, v2_new.y);
+
+        // overwrite old geo-coordinates
+        _vesselData['trackData'][io.index].lat = newGeoPoint1[0];
+        _vesselData['trackData'][io.index].lon = newGeoPoint1[1];
+        _vesselData['trackData'][io.index + 1].lat = newGeoPoint2[0];
+        _vesselData['trackData'][io.index + 1].lon = newGeoPoint2[1];
+      }
+    }
+  }
+
+// ——————————————————————————————————————————————————
+// public methods
+// ——————————————————————————————————————————————————
 
   getVesselByMMSI(_mmsi) {
     let vessel = null;
@@ -308,9 +379,18 @@ class VTRecorder {
 
 
   saveData() {
+
+    const _vesselDataCopy = [...this.vesselPool];
+    this.validateAndOptimize(_vesselDataCopy);
+
+
     let data = {
-      meta: 'meta info => timestamp, numVessels, etc.',
-      vesselPool: this.vesselPool
+      // meta: 'meta info => timestamp, numVessels, etc.',
+      meta: {
+        numVessels: this.vesselPool.length
+      },
+      // vesselPool: this.vesselPool
+      vesselPool: _vesselDataCopy
     };
 
     let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
