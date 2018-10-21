@@ -13,7 +13,7 @@ import {Vector2} from "../../../utils/vector2";
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 
-const trackData = require("./trackData/blob.json");
+const trackData = require("./trackData/blob240.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -55,12 +55,19 @@ class VTPlayer extends React.Component {
     this.initStage();
 
     this.mapLayer = new PIXI.Container();
+    this.mapLayer.interactive = true;
     this.boundsLayer = new PIXI.Container();
     this.pathLayer = new PIXI.Container();
     this.vesselLayer = new PIXI.Container();
 
     let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
     this.mapLayer.addChild(sprite);
+    this.mapLayer.on('click', (e) => {
+      // its not really accurate for drawing polygons
+      // https://www.scribblemaps.com/
+      const point = this.app.renderer.plugins.interaction.mouse.global;
+      console.log(VTPlayerUtils.geoFromCartesian(point.x, point.y))
+    });
 
     this.mapLayer.cacheAsBitmap = true;
     this.pathLayer.cacheAsBitmap = true;
@@ -155,11 +162,11 @@ class VTPlayer extends React.Component {
       for (let b = 0; b < this.collisionBounds.length; b++) {
         if (VTPlayerUtils.isInBounds(currentTrackPoint, this.collisionBounds[b])) {
           const collisionBounds = this.collisionBounds[b];
-          const line_start =  VTPlayerUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon);
+          const line_start = VTPlayerUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon);
           const line_end = VTPlayerUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon);
           const intersecting = VTPlayerUtils.lineIntersecting(collisionBounds.collisionLineStart, collisionBounds.collisionLineEnd, line_start, line_end);
           if (intersecting) {
-            console.log('intersected', _vesselData['mmsi'],Vector2.getDistance(collisionBounds.collisionLineStart, intersecting))
+            console.log('intersected', _vesselData['mmsi'], Vector2.getDistance(collisionBounds.collisionLineStart, intersecting))
             intersected.push({
               index: i,
               bounds: collisionBounds,
@@ -172,6 +179,7 @@ class VTPlayer extends React.Component {
     }
 
     // handle intersected
+    // maybe offset points parallel to intersecting trackLine ...
     let minDistance = 5; // = 15m (4K projected 1m = .333px)
     if (intersected.length > 0) {
       let io = {};
@@ -184,6 +192,9 @@ class VTPlayer extends React.Component {
         const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
         const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
         const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
+
+        // VTPlayerUtils.plotPoint(this.pathLayer, pos1, 0xff0000);
+        // VTPlayerUtils.plotPoint(this.pathLayer, pos2, 0xff0000);
 
         // convert back from cartesian to lat/long
         const newGeoPoint1 = VTPlayerUtils.geoFromCartesian(v1_new.x, v1_new.y);
@@ -201,8 +212,8 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 65,
-      end: 66,
+      start: 0,
+      end: 95,
       _count: 0
     };
 

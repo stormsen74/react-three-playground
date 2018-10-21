@@ -10,7 +10,7 @@ class VTRecorder {
     this.mapReferenz = _map;
 
     this.timerData = {
-      timeStep: 60,
+      timeStep: 30,
       currentStep: 0
     };
 
@@ -36,7 +36,7 @@ class VTRecorder {
     this.vesselPool = [];
 
     this.mapReferenz.resetTimerDisplay();
-    this.mapReferenz.onUpdateTrackerData(this.vesselPool);
+    this.mapReferenz.onUpdateTrackerData(this.filterVesselPool(this.vesselPool));
   }
 
 
@@ -267,9 +267,64 @@ class VTRecorder {
     }
 
     // console.log(vesselPool)
+    const _filteredVesselPool = this.filterVesselPool(this.vesselPool);
+    this.getVesselTypes(_filteredVesselPool)
+
 
   }
 
+
+  getVesselTypes(vesselPool) {
+
+    let vessel_types = [
+      {type: 'pleasure_crafts', count: 0},
+      {type: 'tankships', count: 0},
+      {type: 'cargo_ships', count: 0},
+      {type: 'passenger_ships', count: 0},
+      {type: 'sailing_vessels', count: 0},
+      {type: 'tugboats', count: 0},
+      {type: 'dredgers', count: 0},
+      {type: 'pilot_vessels', count: 0},
+      {type: 'ekranoplans', count: 0},
+      {type: 'towing_vessels', count: 0},
+      {type: 'rescue_vessels', count: 0},
+      {type: 'coast_guard_ships', count: 0},
+      {type: 'high-speed_crafts', count: 0},
+      {type: 'others', count: 0}
+    ];
+
+    for (let i = 0; i < vesselPool.length; i++) {
+      const _type = vesselPool[i]['aisStatic']['type'];
+
+      // for Debug-types take out later ...
+      if (
+        _type === vessel_types[0].type ||
+        _type === vessel_types[1].type ||
+        _type === vessel_types[2].type ||
+        _type === vessel_types[3].type ||
+        _type === vessel_types[4].type ||
+        _type === vessel_types[5].type ||
+        _type === vessel_types[6].type ||
+        _type === vessel_types[7].type ||
+        _type === vessel_types[8].type ||
+        _type === vessel_types[9].type ||
+        _type === vessel_types[10].type ||
+        _type === vessel_types[11].type ||
+        _type === vessel_types[12].type ||
+        _type === vessel_types[13].type) {
+      } else {
+        console.log('missing type: ', _type)
+      }
+
+      for (let j = 0; j < vessel_types.length; j++) {
+        if (_type === vessel_types[j].type) {
+          vessel_types[j].count++;
+        }
+      }
+    }
+
+    console.log(vessel_types)
+  }
 
   updateData(data) {
     // console.log('timeCreated', data['timeCreated'])
@@ -287,28 +342,33 @@ class VTRecorder {
     this.updatePool(this.vesselPool, data);
 
     this.timerData.currentStep++;
-    this.mapReferenz.onUpdateTrackerData(this.vesselPool);
+    this.mapReferenz.onUpdateTrackerData(this.filterVesselPool(this.vesselPool), this.vesselPool.length);
 
 
   }
 
 
-  validateAndOptimize(vesselPool) {
+  filterVesselPool(vesselPool) {
+    let filteredPool = [];
     for (let i = 0; i < vesselPool.length; i++) {
+      const inMapRange = vesselPool[i]['inMapRange'];
+      const validData = vesselPool[i]['valid'];
+      if (inMapRange && validData) filteredPool.push(vesselPool[i]);
+    }
+    return filteredPool;
+  }
 
-      let hasMoved = vesselPool[i]['hasMoved'];
-      let inMapRange = vesselPool[i]['inMapRange'];
-      let validData = vesselPool[i]['valid'];
 
-      if (hasMoved && inMapRange && validData) {
-        this.optimizeTrackData(vesselPool[i]);
-      }
+  optimizePool(vesselPool) {
+    for (let i = 0; i < vesselPool.length; i++) {
+      const hasMoved = vesselPool[i]['hasMoved'];
+      if (hasMoved) this.optimizeTrackData(vesselPool[i]);
     }
   }
 
 
   optimizeTrackData(_vesselData) {
-    console.log('optimize', _vesselData['mmsi'])
+    console.log('check bounding', _vesselData['mmsi'])
 
     let intersected = [];
     for (let i = 0; i < _vesselData['trackData'].length; i++) {
@@ -342,10 +402,12 @@ class VTRecorder {
       let io = {};
       for (let j = 0; j < intersected.length; j++) {
         io = intersected[j];
-        const pos1 = VTRecorderUtils.cartesianFromLatLong(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
-        const pos2 = VTRecorderUtils.cartesianFromLatLong(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
-        const v1 = new Vector2(pos1[0], pos1[1]);
-        const v2 = new Vector2(pos2[0], pos2[1]);
+        // const pos1 = VTRecorderUtils.cartesianFromLatLong(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
+        // const pos2 = VTRecorderUtils.cartesianFromLatLong(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
+        // const v1 = new Vector2(pos1[0], pos1[1]);
+        // const v2 = new Vector2(pos2[0], pos2[1]);
+        const v1 = VTRecorderUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
+        const v2 = VTRecorderUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
         const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
         const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
         const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
@@ -378,19 +440,21 @@ class VTRecorder {
   }
 
 
-  saveData() {
+  saveData(asRawData = false) {
 
-    const _vesselDataCopy = [...this.vesselPool];
-    this.validateAndOptimize(_vesselDataCopy);
+    // const _vesselDataCopy = [...this.vesselPool];
+    const _filteredVesselPool = this.filterVesselPool(this.vesselPool);
+    if (!asRawData) this.optimizePool(_filteredVesselPool);
 
+    console.log('filteredPoolLength: ', _filteredVesselPool.length);
 
     let data = {
       // meta: 'meta info => timestamp, numVessels, etc.',
       meta: {
-        numVessels: this.vesselPool.length
+        numVessels: _filteredVesselPool.length
       },
       // vesselPool: this.vesselPool
-      vesselPool: _vesselDataCopy
+      vesselPool: _filteredVesselPool
     };
 
     let blob = new Blob([JSON.stringify(data)], {type: "application/json"});

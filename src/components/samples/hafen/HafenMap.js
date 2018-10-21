@@ -37,6 +37,7 @@ class HafenMap extends React.Component {
       vesselPoolSize: 0,
       vesselsInMapRange: 0,
       movingVessels: 0,
+      staticVessels: 0,
       movedVessels: 0,
       currentStep: 0
     };
@@ -49,6 +50,10 @@ class HafenMap extends React.Component {
 
   onStopRecord() {
     this.vtc.stopRecord();
+  }
+
+  onSaveRawData() {
+    this.vtc.saveData(true);
   }
 
   onSaveData() {
@@ -126,13 +131,18 @@ class HafenMap extends React.Component {
         color = 0x00ff00;
         break;
       case 'static':
-        color = 0xffa200;
+        color = 0x4dc2e2;
         break;
       case 'lost':
         color = 0x2ad2f6;
         break;
     }
     return color;
+  }
+
+
+  plotStaticVessel(pathArray, vesselData) {
+    this.plotVessel(vesselData)
   }
 
 
@@ -171,7 +181,7 @@ class HafenMap extends React.Component {
 
     // initial => show all / next step only moving vessels ...
     if (this.vtc.timerData.currentStep > 0) {
-      if (!vesselData.hasMoved) return;
+      // if (!vesselData.hasMoved) return;
       if (!vesselData.valid) return;
     }
 
@@ -183,6 +193,7 @@ class HafenMap extends React.Component {
       let vesselData = this.vtc.getVesselByMMSI(event.target.mmsi);
       console.log(event.target.mmsi, vesselData)
     });
+    // test textures ...
     vessel.beginFill(this.getColorByStatus(vesselData.status), vesselData.inMapRange ? 1 : .25);
     vessel.drawPolygon([0, -5, 4, 5, -4, 5]);
     vessel.endFill();
@@ -209,7 +220,9 @@ class HafenMap extends React.Component {
     }
   }
 
-  onUpdateTrackerData(vesselPool) {
+  onUpdateTrackerData(vesselPool, rawPoolSize = 0) {
+
+    console.log('updated', rawPoolSize)
 
     for (let i = 0; i < this.vesselGraphics.children.length; i++) {
       this.vesselGraphics.children[i].destroy();
@@ -220,6 +233,7 @@ class HafenMap extends React.Component {
 
     let movingVessels = 0;
     let movedVessels = 0;
+    let staticVessels = 0;
     let vesselsInMapRange = 0;
 
     for (let i = 0; i < vesselPool.length; i++) {
@@ -234,16 +248,20 @@ class HafenMap extends React.Component {
       }
 
       // Todo display valid ?
-      if (vesselPool[i]['status'] === 'moving' && vesselPool[i]['valid']) {
+      if (vesselPool[i]['status'] === 'moving' && vesselPool[i]['inMapRange'] === true) {
         this.plotVesselPath(vesselPool[i]['trackData'], vesselPool[i]);
         movingVessels++;
+      } else {
+        this.plotStaticVessel(vesselPool[i]['trackData'], vesselPool[i]);
+        staticVessels++
       }
     }
 
     // update Debug
-    this.setState({vesselPoolSize: vesselPool.length});
+    this.setState({vesselPoolSize: rawPoolSize});
     this.setState({vesselsInMapRange: vesselsInMapRange});
     this.setState({movingVessels: movingVessels});
+    this.setState({staticVessels: staticVessels});
     this.setState({movedVessels: movedVessels});
     this.setState({currentStep: this.vtc.timerData.currentStep});
 
@@ -365,11 +383,12 @@ class HafenMap extends React.Component {
         <div className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}></div>
         <div className={'debug'}>
           {indicatorMarkup}
-          <div style={{position: 'absolute', top: '45px', right: '5px', width: '185px'}}>{'currentStep: ' + this.state.currentStep}</div>
-          <div style={{position: 'absolute', top: '65px', right: '5px', width: '185px'}}>{'vesselPoolSize: ' + this.state.vesselPoolSize}</div>
-          <div style={{position: 'absolute', top: '85px', right: '5px', width: '185px'}}>{'vesselsInRange: ' + this.state.vesselsInMapRange}</div>
-          <div style={{position: 'absolute', top: '105px', right: '5px', width: '185px'}}>{'movingVessels: ' + this.state.movingVessels}</div>
-          <div style={{position: 'absolute', top: '125px', right: '5px', width: '185px'}}>{'movedVessels: ' + this.state.movedVessels}</div>
+          <div style={{position: 'absolute', top: '45px', right: '5px', width: '185px'}}>{'vesselPoolSize: ' + this.state.vesselPoolSize}</div>
+          <div style={{position: 'absolute', top: '65px', right: '5px', width: '185px'}}>{'currentStep: ' + this.state.currentStep}</div>
+          <div style={{position: 'absolute', color: '#ccccff', top: '85px', right: '5px', width: '185px'}}>{'vesselsInRange: ' + this.state.vesselsInMapRange}</div>
+          <div style={{position: 'absolute', color: '#ccccff', top: '105px', right: '5px', width: '185px'}}>{'movingVessels: ' + this.state.movingVessels}</div>
+          <div style={{position: 'absolute', color: '#ccccff', top: '125px', right: '5px', width: '185px'}}>{'staticVessels: ' + this.state.staticVessels}</div>
+          {/*<div style={{position: 'absolute', top: '125px', right: '5px', width: '185px'}}>{'movedVessels: ' + this.state.movedVessels}</div>*/}
           <div style={{position: 'absolute', top: '155px', right: '5px', width: '185px'}}>
             <Button onClick={() => this.onStartRecord()} color="success">Start</Button>
           </div>
@@ -377,6 +396,9 @@ class HafenMap extends React.Component {
             <Button onClick={() => this.onStopRecord()} color="danger">Stop</Button>
           </div>
           <div style={{position: 'absolute', top: '200px', right: '5px', width: '185px'}}>
+            <Button onClick={() => this.onSaveRawData()} color="warning">Save Raw Data</Button>
+          </div>
+          <div style={{position: 'absolute', top: '245px', right: '5px', width: '185px'}}>
             <Button onClick={() => this.onSaveData()} color="warning">Save Data</Button>
           </div>
         </div>

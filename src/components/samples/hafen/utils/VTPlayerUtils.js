@@ -92,8 +92,9 @@ VTPlayerUtils.plotCollisionBounds = (boundsObject, layer) => {
     VTPlayerUtils.plotPoint(layer, new Vector2(pos[0], pos[1]), 0x000000, 1.5, 'bounds')
   }
 
-  VTPlayerUtils.plotPoint(layer, boundsObject.collisionLineStart, 0x000000, 1.5, 'bounds');
-  VTPlayerUtils.plotPoint(layer, boundsObject.collisionLineEnd, 0x000000, 1.5, 'bounds');
+  VTPlayerUtils.plotPoint(layer, boundsObject.collisionLineStart, 0x00ff00, 1.5, 'bounds');
+  VTPlayerUtils.plotPoint(layer, boundsObject.collisionLineEnd, 0x00ff00, 1.5, 'bounds');
+  VTPlayerUtils.plotLine(layer, boundsObject.collisionLineEnd, boundsObject.collisionLineStart, 0xe100ff);
 
 };
 
