@@ -567,29 +567,29 @@ Vector2.prototype = {
 
 Vector2.add = function (v1, v2) {
     return new Vector2(v1.x + v2.x, v1.y + v2.y);
-}
+};
 
 Vector2.subtract = function (v1, v2) {
     return new Vector2(v1.x - v2.x, v1.y - v2.y);
-}
+};
 
 Vector2.multiply = function (v, m) {
     return new Vector2(v.x * m, v.y * m);
-}
+};
 
 Vector2.divide = function (v, d) {
     return new Vector2(v.x / d, v.y / d);
-}
+};
 
 Vector2.getDistance = function (v1, v2) {
     var dx = v2.x - v1.x;
     var dy = v2.y - v1.y;
     return Math.sqrt(dx * dx + dy * dy);
-}
+};
 
 Vector2.getAngleRAD = function (v) {
     return Math.atan2(v.y, v.x);
-}
+};
 
 
 // ——————————————————————————————————————————————————

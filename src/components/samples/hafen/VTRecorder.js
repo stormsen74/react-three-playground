@@ -10,11 +10,12 @@ class VTRecorder {
     this.mapReferenz = _map;
 
     this.timerData = {
-      timeStep: 30,
+      timeStep: 60,
       currentStep: 0
     };
 
     this.vesselPool = [];
+    this.infoTrack = [];
     this.trackLength = 0;
 
     this.load = this.load.bind(this);
@@ -22,23 +23,9 @@ class VTRecorder {
   }
 
 
-  startRecord() {
-    if (!this.recordStep) {
-      this.load();
-      this.recordStep = window.setInterval(this.load, this.timerData.timeStep * 1000);
-    }
-  }
-
-  stopRecord() {
-    clearInterval(this.recordStep);
-    this.recordStep = null;
-    this.timerData.currentStep = 0;
-    this.vesselPool = [];
-
-    this.mapReferenz.resetTimerDisplay();
-    this.mapReferenz.onUpdateTrackerData(this.filterVesselPool(this.vesselPool));
-  }
-
+  // ——————————————————————————————————————————————————
+  // api - handling
+  // ——————————————————————————————————————————————————
 
   load() {
     this.mapReferenz.restartTimerDisplay();
@@ -61,6 +48,28 @@ class VTRecorder {
     }).then(function () {
       // if error debug!
     });
+  }
+
+  // ——————————————————————————————————————————————————
+  // record - controls
+  // ——————————————————————————————————————————————————
+
+  startRecord() {
+    if (!this.recordStep) {
+      this.load();
+      this.recordStep = window.setInterval(this.load, this.timerData.timeStep * 1000);
+    }
+  }
+
+  stopRecord() {
+    clearInterval(this.recordStep);
+    this.recordStep = null;
+    this.timerData.currentStep = 0;
+    this.vesselPool = [];
+    this.infoTrack = [];
+
+    this.mapReferenz.resetTimerDisplay();
+    this.mapReferenz.onUpdateTrackerData(this.filterVesselPool(this.vesselPool));
   }
 
   // ——————————————————————————————————————————————————
@@ -95,13 +104,17 @@ class VTRecorder {
     return lat < VTRecorderUtils.mapRange.minLat && lat > VTRecorderUtils.mapRange.maxLat && lon > VTRecorderUtils.mapRange.minLong && lon < VTRecorderUtils.mapRange.maxLong;
   }
 
+  // ——————————————————————————————————————————————————
+  // vesselPool / handling
+  // ——————————————————————————————————————————————————
+
   createVesselData(vesselData) {
     return {
       mmsi: vesselData['aisStatic']['mmsi'],
       status: vesselData['geoDetails']['status'],
       valid: true,
-      inMapRange: this.inMapRange(this.getFixed(vesselData['aisPosition']['lat']), this.getFixed(vesselData['aisPosition']['lon'])), //'check for Bounds'
-      // hasMoved: vesselData['geoDetails']['status'] === 'moving' ? true : false,
+      inMapRange: this.inMapRange(this.getFixed(vesselData['aisPosition']['lat']), this.getFixed(vesselData['aisPosition']['lon'])),
+      passedMapRange: this.inMapRange(this.getFixed(vesselData['aisPosition']['lat']), this.getFixed(vesselData['aisPosition']['lon'])),
       hasMoved: false, // => check for delta / in stepRange[5]?
 
       aisStatic: {
@@ -141,22 +154,22 @@ class VTRecorder {
       this.vesselPool[i] = this.createVesselData(data['vessels'][i])
     }
 
-    this.mapReferenz.onUpdateTrackerData(this.vesselPool);
+    this.updateInfoTrack(this.filterVesselPool(this.vesselPool));
+    this.mapReferenz.onUpdateTrackerData(this.vesselPool, this.vesselPool.length, this.infoTrack);
 
     console.log(this.vesselPool);
   }
-
 
   updatePool(vesselPool, newData) {
 
     this.trackLength++;
 
-    let udatedVessels = newData['vessels'];
+    let updatedVessels = newData['vessels'];
 
     // update poolData
     for (let i = 0; i < vesselPool.length; i++) {
       const _mmsi = vesselPool[i]['mmsi'];
-      let result = udatedVessels.filter(o => {
+      let result = updatedVessels.filter(o => {
         return o['aisStatic']['mmsi'] === _mmsi;
       });
 
@@ -201,7 +214,13 @@ class VTRecorder {
         }
 
         // check => in mapRange
-        if (!vesselPool[i]['inMapRange'] && this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon'])) vesselPool[i]['inMapRange'] = true;
+        if (!vesselPool[i]['passedMapRange'] && this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon'])) vesselPool[i]['passedMapRange'] = true;
+
+        if (this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon'])) {
+          vesselPool[i]['inMapRange'] = true;
+        } else {
+          vesselPool[i]['inMapRange'] = false;
+        }
 
         // check movement
         if (!vesselPool[i]['hasMoved'] && result[0]['geoDetails']['status'] == 'moving' && this.hasMoved(vesselPool[i]['trackData'])) vesselPool[i]['hasMoved'] = true;
@@ -236,11 +255,11 @@ class VTRecorder {
     }
 
     // check for new vessels and add
-    for (let i = 0; i < udatedVessels.length; i++) {
+    for (let i = 0; i < updatedVessels.length; i++) {
       let newVessel = null;
-      const _mmsi = udatedVessels[i]['aisStatic']['mmsi'];
+      const _mmsi = updatedVessels[i]['aisStatic']['mmsi'];
       let result = vesselPool.filter(o => {
-        newVessel = this.createVesselData(udatedVessels[i]);
+        newVessel = this.createVesselData(updatedVessels[i]);
         return o['mmsi'] === _mmsi;
       });
 
@@ -266,13 +285,62 @@ class VTRecorder {
 
     }
 
-    // console.log(vesselPool)
-    const _filteredVesselPool = this.filterVesselPool(this.vesselPool);
-    this.getVesselTypes(_filteredVesselPool)
+  }
 
+  updateData(data) {
+    // console.log('timeCreated', data['timeCreated'])
+    // console.log('numVessels', data['numVessels'])
+    // console.log(data['vessels'][0])
+    // console.log(data['vessels'][0]['aisStatic'])
+    // console.log(data['vessels'][0]['aisPosition']['lon'])
+
+
+    let numVessels = data['numVessels'];
+
+    console.log('=> ', this.vesselPool.length, numVessels);
+
+
+    this.updatePool(this.vesselPool, data);
+
+    this.timerData.currentStep++;
+    this.mapReferenz.onUpdateTrackerData(this.filterVesselPool(this.vesselPool), this.vesselPool.length, this.infoTrack);
+    this.updateInfoTrack(this.filterVesselPool(this.vesselPool));
 
   }
 
+  // ——————————————————————————————————————————————————
+  // info - track
+  // ——————————————————————————————————————————————————
+
+  getLongestVessel(vesselPool) {
+    let maxLength = 0;
+    let vessel = {mmsi: 0, length: 0};
+    for (let i = 0; i < vesselPool.length; i++) {
+      const vesselLength = vesselPool[i]['aisStatic']['length'];
+      const mmsi = vesselPool[i]['mmsi'];
+      if (this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon']) && vesselLength > maxLength) {
+        maxLength = vesselLength;
+        vessel.mmsi = mmsi;
+        vessel.length = maxLength;
+      }
+    }
+    return vessel
+  }
+
+  getFastestVessel(vesselPool) {
+    let maxSpeed = 0;
+    let vessel = {mmsi: 0, speed: 0};
+    for (let i = 0; i < vesselPool.length; i++) {
+      const vesselSpeed = vesselPool[i]['aisPosition']['sog'];
+      const mmsi = vesselPool[i]['mmsi'];
+      if (this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon']) && vesselSpeed > maxSpeed) {
+        maxSpeed = vesselSpeed;
+        vessel.mmsi = mmsi;
+        vessel.speed = maxSpeed;
+      }
+    }
+    return vessel
+  }
 
   getVesselTypes(vesselPool) {
 
@@ -323,41 +391,31 @@ class VTRecorder {
       }
     }
 
-    console.log(vessel_types)
+    return vessel_types
   }
 
-  updateData(data) {
-    // console.log('timeCreated', data['timeCreated'])
-    // console.log('numVessels', data['numVessels'])
-    // console.log(data['vessels'][0])
-    // console.log(data['vessels'][0]['aisStatic'])
-    // console.log(data['vessels'][0]['aisPosition']['lon'])
-
-
-    let numVessels = data['numVessels'];
-
-    console.log('=> ', this.vesselPool.length, numVessels);
-
-
-    this.updatePool(this.vesselPool, data);
-
-    this.timerData.currentStep++;
-    this.mapReferenz.onUpdateTrackerData(this.filterVesselPool(this.vesselPool), this.vesselPool.length);
-
-
+  updateInfoTrack(_filteredVesselPool) {
+    const vesselTypes = this.getVesselTypes(_filteredVesselPool);
+    const longestVessel = this.getLongestVessel(_filteredVesselPool);
+    const fastestVessel = this.getFastestVessel(_filteredVesselPool);
+    this.infoTrack.push(
+      {vesselTypes, longestVessel, fastestVessel}
+    );
   }
 
+  // ——————————————————————————————————————————————————
+  // filtering / optimizing
+  // ——————————————————————————————————————————————————
 
   filterVesselPool(vesselPool) {
     let filteredPool = [];
     for (let i = 0; i < vesselPool.length; i++) {
-      const inMapRange = vesselPool[i]['inMapRange'];
+      const passedMapRange = vesselPool[i]['passedMapRange'];
       const validData = vesselPool[i]['valid'];
-      if (inMapRange && validData) filteredPool.push(vesselPool[i]);
+      if (passedMapRange && validData) filteredPool.push(vesselPool[i]);
     }
     return filteredPool;
   }
-
 
   optimizePool(vesselPool) {
     for (let i = 0; i < vesselPool.length; i++) {
@@ -366,12 +424,11 @@ class VTRecorder {
     }
   }
 
-
   optimizeTrackData(_vesselData) {
-    console.log('check bounding', _vesselData['mmsi'])
+    console.log('check bounding', _vesselData['mmsi']);
 
     let intersected = [];
-    for (let i = 0; i < _vesselData['trackData'].length; i++) {
+    for (let i = 0; i < _vesselData['trackData'].length - 1; i++) {
 
       const currentTrackPoint = _vesselData['trackData'][i];
       const nextTrackPoint = _vesselData['trackData'][i + 1];
@@ -402,13 +459,21 @@ class VTRecorder {
       let io = {};
       for (let j = 0; j < intersected.length; j++) {
         io = intersected[j];
-        // const pos1 = VTRecorderUtils.cartesianFromLatLong(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
-        // const pos2 = VTRecorderUtils.cartesianFromLatLong(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
-        // const v1 = new Vector2(pos1[0], pos1[1]);
-        // const v2 = new Vector2(pos2[0], pos2[1]);
+
         const v1 = VTRecorderUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
         const v2 = VTRecorderUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
-        const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
+
+        // ——————————————————————————————————————————————————
+        // offset points 90° =>  to origin line
+        // ——————————————————————————————————————————————————
+        const line_dir = Vector2.subtract(v1, v2).normalize();
+        const collision_dir = new Vector2(-line_dir.y, line_dir.x);
+
+        // ——————————————————————————————————————————————————
+        // offset points => cross line direction
+        // ——————————————————————————————————————————————————
+        // const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
+
         const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
         const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
 
@@ -439,6 +504,9 @@ class VTRecorder {
     return vessel;
   }
 
+  // ——————————————————————————————————————————————————
+  // save data
+  // ——————————————————————————————————————————————————
 
   saveData(asRawData = false) {
 
@@ -457,8 +525,10 @@ class VTRecorder {
       vesselPool: _filteredVesselPool
     };
 
-    let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-    saveAs(blob, "blob.json");
+    let vesselData = new Blob([JSON.stringify(data)], {type: "application/json"});
+    let infoTrack = new Blob([JSON.stringify(this.infoTrack)], {type: "application/json"});
+    saveAs(vesselData, "vesselData.json");
+    saveAs(infoTrack, "infoTrack.json");
   }
 }
 

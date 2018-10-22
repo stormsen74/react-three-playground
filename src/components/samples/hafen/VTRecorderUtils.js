@@ -1,4 +1,5 @@
 import {Vector2} from "../../../utils/vector2";
+import VTPlayerUtils from "./utils/VTPlayerUtils";
 
 const VTRecorderUtils = {};
 
@@ -104,21 +105,57 @@ VTRecorderUtils.lineIntersecting = (l1_start, l1_end, l2_start, l2_end) => {
 VTRecorderUtils.collisionBounds = [
   {
     index: 0,
-    minLong: 9.94979,
-    maxLong: 9.95385,
-    minLat: 53.54188,
-    maxLat: 53.53949,
+    minLong: 9.949696544325088,
+    maxLong: 9.953972099880643,
+    minLat: 53.54292959464058,
+    maxLat: 53.53781868981334,
     collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.540694, 9.951064),
     collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.540894, 9.954155)
   },
   {
     index: 1,
     minLong: 9.951390,
-    maxLong: 9.953890,
+    maxLong: 9.955178025806568,
     minLat: 53.539734,
-    maxLat: 53.537987,
+    maxLat: 53.53755770742224,
     collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.538943, 9.952549),
     collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.538745, 9.954598)
+  },
+  {
+    index: 2,
+    minLong: 9.932996296296295,
+    maxLong: 9.938879753644025,
+    minLat: 53.54105922150139,
+    maxLat: 53.53781868981334,
+    collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.53964556655106, 9.934604198088469),
+    collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.539254092964406, 9.937783457347729)
+  },
+  {
+    index: 3,
+    minLong: 9.966835310872396,
+    maxLong: 9.9716590145761,
+    minLat: 53.5259657392189,
+    maxLat: 53.52300793812268,
+    collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.524965306055954, 9.970416544325087),
+    collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.52376913809082, 9.968077777777777)
+  },
+  {
+    index: 4,
+    minLong: 9.955506914695457,
+    maxLong: 9.96076913691768,
+    minLat: 53.52716190917516,
+    maxLat: 53.524747822057456,
+    collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.526096230414446, 9.95748024802879),
+    collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.52466082726338, 9.957516792353877)
+  },
+  {
+    index: 5,
+    minLong: 9.96731037037037,
+    maxLong:  9.97059925925926,
+    minLat: 53.54338631382501,
+    maxLat: 53.54064599871843,
+    collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.54203790546803, 9.96880864420573),
+    collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.54079823911029, 9.969247162724248)
   }
 ];
 
