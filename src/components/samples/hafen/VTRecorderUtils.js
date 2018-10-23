@@ -142,9 +142,9 @@ VTRecorderUtils.collisionBounds = [
   {
     index: 4,
     minLong: 9.955506914695457,
-    maxLong: 9.96076913691768,
+    maxLong: 9.961207655436198,
     minLat: 53.52716190917516,
-    maxLat: 53.524747822057456,
+    maxLat: 53.52398662208932,
     collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.526096230414446, 9.95748024802879),
     collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.52466082726338, 9.957516792353877)
   },

@@ -44,9 +44,9 @@ VTPlayerUtils.plotPoint = (layer, vPos, color = 0xffffff, r = 1.5) => {
   layer.addChild(point);
 };
 
-VTPlayerUtils.plotLine = (layer, v1, v2, color = 0xffffff) => {
+VTPlayerUtils.plotLine = (layer, v1, v2, color = 0xffffff, w = 1) => {
   let line = new PIXI.Graphics();
-  line.lineStyle(1, color, 1);
+  line.lineStyle(w, color, 1);
   line.moveTo(v1.x, v1.y);
   line.lineTo(v2.x, v2.y);
   layer.addChild(line);

@@ -6,6 +6,7 @@ import NotFoundPage from 'pages/NotFoundPage';
 import Cube from "../components/samples/cube/Cube";
 import HafenMap from "../components/samples/hafen/HafenMap";
 import TrackPlayer from "../components/samples/hafen/VTPlayer";
+import TidesVisualizer from "../components/samples/hafen/TidesVisualizer";
 
 class IndexRoutes extends React.Component {
   constructor(props) {
@@ -22,6 +23,7 @@ class IndexRoutes extends React.Component {
           <Route path="/cube" component={Cube}/>
           <Route path="/hafen-map" component={HafenMap}/>
           <Route path="/track-player" component={TrackPlayer}/>
+          <Route path="/tides-visualizer" component={TidesVisualizer}/>
           <Route component={NotFoundPage}/>
         </Switch>
       </BrowserRouter>

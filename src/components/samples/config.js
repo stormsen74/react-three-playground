@@ -13,5 +13,10 @@ export const samples = [
     title: 'TrackPlayer',
     description: 'Here some other description text ...',
     route: '/track-player'
+  },
+  {
+    title: 'TidesVisualizer',
+    description: 'Here some other description text ...',
+    route: '/tides-visualizer'
   }
 ];

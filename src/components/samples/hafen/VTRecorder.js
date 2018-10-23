@@ -2,6 +2,7 @@ import axios from 'axios';
 import saveAs from 'file-saver';
 import {Vector2} from "../../../utils/vector2";
 import VTRecorderUtils from "./VTRecorderUtils";
+import date from 'date-and-time';
 
 class VTRecorder {
 
@@ -11,7 +12,8 @@ class VTRecorder {
 
     this.timerData = {
       timeStep: 60,
-      currentStep: 0
+      currentStep: 0,
+      recordLength: 2 * 60
     };
 
     this.vesselPool = [];
@@ -306,6 +308,12 @@ class VTRecorder {
     this.mapReferenz.onUpdateTrackerData(this.filterVesselPool(this.vesselPool), this.vesselPool.length, this.infoTrack);
     this.updateInfoTrack(this.filterVesselPool(this.vesselPool));
 
+    if (this.timerData.currentStep === this.timerData.recordLength - 1) {
+      this.saveData();
+      this.stopRecord();
+      return
+    }
+
   }
 
   // ——————————————————————————————————————————————————
@@ -389,9 +397,16 @@ class VTRecorder {
           vessel_types[j].count++;
         }
       }
+
     }
 
-    return vessel_types
+    let vesselStatistics = [];
+    for (let i = 0; i < vessel_types.length; i++) {
+      vesselStatistics[i] = vessel_types[i]['count'];
+    }
+
+    // return vessel_types
+    return vesselStatistics
   }
 
   updateInfoTrack(_filteredVesselPool) {
@@ -525,10 +540,15 @@ class VTRecorder {
       vesselPool: _filteredVesselPool
     };
 
+    let now = new Date();
+    // date.format(now, 'YYYY/MM/DD HH:mm:ss');
+    const dateString = date.format(now, 'MM_DD_HH_mm');
+    const trackLength = this.infoTrack.length;
+
     let vesselData = new Blob([JSON.stringify(data)], {type: "application/json"});
     let infoTrack = new Blob([JSON.stringify(this.infoTrack)], {type: "application/json"});
-    saveAs(vesselData, "vesselData.json");
-    saveAs(infoTrack, "infoTrack.json");
+    saveAs(vesselData, dateString + "_l" + trackLength + "_vesselData.json");
+    saveAs(infoTrack, dateString + "_l" + trackLength + "_infoTrack.json");
   }
 }
 
