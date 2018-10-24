@@ -326,14 +326,14 @@ class VTPlayer extends React.Component {
     // parse Track
     let parsedTrack = [];
     for (let i = 0; i < _vesselData['trackData'].length - 1; i++) {
-      let pointColor = 0xff0000;
+      let pointColor = 0x000000;
       let currentTrackPoint = _vesselData['trackData'][i];
       let nextTrackPoint = _vesselData['trackData'][i + 1];
       let currentPosition = VTPlayerUtils.cartesianFromLatLong(currentTrackPoint.lat, currentTrackPoint.lon);
       parsedTrack[i] = {x: currentPosition[0], y: currentPosition[1], status: _vesselData['trackData'].status};
 
       // plot points
-      VTPlayerUtils.plotPoint(this.pathLayer, new Vector2(currentPosition[0], currentPosition[1]), pointColor);
+      VTPlayerUtils.plotPoint(this.pathLayer, new Vector2(currentPosition[0], currentPosition[1]), pointColor, 1);
 
       // plot path
       VTPlayerUtils.plotLine(this.pathLayer,

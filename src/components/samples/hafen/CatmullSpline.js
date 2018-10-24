@@ -9,7 +9,7 @@ class CatmullSpline {
       this.functionCache.push([]);
     }
 
-    const tau = 1;
+    const tau = 1.3;
     this.catmullRomMatrix = new CatmullMatrix(
       [0, 2, 0, 0],
       [-tau, 0, tau, 0],
