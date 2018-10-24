@@ -9,7 +9,7 @@ class CatmullSpline {
       this.functionCache.push([]);
     }
 
-    const tau = .75;
+    const tau = 1;
     this.catmullRomMatrix = new CatmullMatrix(
       [0, 2, 0, 0],
       [-tau, 0, tau, 0],
@@ -21,12 +21,12 @@ class CatmullSpline {
 
 
   evaluate(rawT) {
-    var i = Math.floor(rawT);
-    var t = rawT % 1;
+    const i = Math.floor(rawT);
+    const t = rawT % 1;
     if (i + 3 >= this.points.length) return false;
 
-    var cx = this.getHermiteFunction(i, 0);
-    var cy = this.getHermiteFunction(i, 1);
+    const cx = this.getHermiteFunction(i, 0);
+    const cy = this.getHermiteFunction(i, 1);
 
     return [
       cx.rows[0][0] + t * cx.rows[1][0] + t * t * cx.rows[2][0] + t * t * t * cx.rows[3][0],

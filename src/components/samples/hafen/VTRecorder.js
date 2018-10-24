@@ -13,7 +13,7 @@ class VTRecorder {
     this.timerData = {
       timeStep: 60,
       currentStep: 0,
-      recordLength: 2 * 60
+      recordLength: 4 * 60
     };
 
     this.vesselPool = [];

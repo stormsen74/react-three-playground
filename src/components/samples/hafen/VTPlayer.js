@@ -14,7 +14,7 @@ import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 import VTRecorderUtils from "./VTRecorderUtils";
 
-const trackData = require("./trackData/10_23_12_08_l61_vesselData.json");
+const trackData = require("./trackData/10_24_17_41_l240_vesselData.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -40,7 +40,7 @@ class VTPlayer extends React.Component {
     this.playTimeline = this.playTimeline.bind(this);
     this.pauseTimeline = this.pauseTimeline.bind(this);
 
-    this.trackLength = 60;
+    this.trackLength = 240;
 
   }
 
