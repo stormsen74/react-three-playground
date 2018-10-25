@@ -1,12 +1,12 @@
 === 24.10.2018 ===
 
-1540252800 start (current-day - 1)
+1540339200 start (current-day - 1)
 1540425600 end (start + 2days)
 259200 length (3days)
 
 53.544382, 9.966491
 
-https://www.aerisweather.com/
+
 
 https://www.epochconverter.com/
 
@@ -15,4 +15,23 @@ https://gezeitenfisch.com/de/hamburg/hamburg-st-pauli#_gezeiten
 
 https://www.worldtides.info/
 
-api?extremes&lat=53.544382&lon=9.966491&start=1539561600&length=259200&key=39457c2e-7d8d-43e1-af1c-655ac83991d3
+api?extremes&lat=53.544382&lon=9.966491&start=1540339200&length=259200&key=39457c2e-7d8d-43e1-af1c-655ac83991d3
+
+
+
+
+
+
+
+
+
+
+https://www.aerisweather.com/
+
+aerisweather2018
+
+Access ID
+cOd7AOTrhdtTLzA7z4XtK
+
+Secret Key
+kIX2fOlifI58oh5vSokitotV6MelEg7oArAUW9CI

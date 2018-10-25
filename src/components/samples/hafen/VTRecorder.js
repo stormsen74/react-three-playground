@@ -13,7 +13,7 @@ class VTRecorder {
     this.timerData = {
       timeStep: 60,
       currentStep: 0,
-      recordLength: 4 * 60
+      recordLength: 6 * 60
     };
 
     this.vesselPool = [];
@@ -228,11 +228,11 @@ class VTRecorder {
         if (!vesselPool[i]['hasMoved'] && result[0]['geoDetails']['status'] == 'moving' && this.hasMoved(vesselPool[i]['trackData'])) vesselPool[i]['hasMoved'] = true;
 
 
-        // check for large distance jumps (unvalid data!)
+        // check for large distance jumps (unvalid data! => 0.13 ~ 800m)
         if (vesselPool[i]['valid']) {
           if (vesselPool[i]['trackData'].length >= 1) {
             const pathArrayLength = vesselPool[i]['trackData'].length;
-            if (this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]) > .02) vesselPool[i]['valid'] = false;
+            if (this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]) > .01) vesselPool[i]['valid'] = false;
           }
         }
 

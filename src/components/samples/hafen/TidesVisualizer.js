@@ -10,14 +10,12 @@ import '../Scene.scss'
 import {Vector2} from "../../../utils/vector2";
 import regression from 'regression';
 import moment from 'moment';
-import tidesReferenz from 'components/samples/hafen/images/tides_23_24_25.png';
 
 
-import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
-import VTRecorderUtils from "./VTRecorderUtils";
 import CatmullSpline from "./CatmullSpline";
 import mathUtils from "../../../utils/mathUtils";
+import axios from "axios";
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -39,27 +37,234 @@ class TidesVisualizer extends React.Component {
   constructor(props) {
     super(props);
 
-    this.loadReady = this.loadReady.bind(this);
+    // this.loadReady = this.loadReady.bind(this);
+    this.getTides = this.getTides.bind(this);
+    this.playTides = this.playTides.bind(this);
+    this.stopTides = this.stopTides.bind(this);
 
 
-    const data = [[0.0, 0.0], [1.5, 1.0], [2.4, 0.0]];
-    const result = regression.polynomial(data, {order: 2, precision: 3});
+    // const data = [[0.0, 0.0], [1.5, 1.0], [2.4, 0.0]];
+    // const result = regression.polynomial(data, {order: 2, precision: 3});
     // console.log(result)
 
-    this.vstart = new Vector2(0, 300);
 
-    let now = moment().format('X');
-    console.log(now)
+    this.plotSize = {
+      width: 1500,
+      height: 600
+    };
 
+
+    this.vstart = new Vector2(0, this.plotSize.height * .5);
+
+    // let yesterday = moment({hour: 0}).add(1, 'hours').add(10, 'day').subtract(1, 'day').format('X');
+    // let today = moment({hour: 0}).add(1, 'hours').add(10, 'day').format('X');
+
+    // let now = moment().format('X');
+    let yesterday = moment({hour: 0}).add(2, 'hours').subtract(1, 'day').format('X');
+    let today = moment({hour: 0}).add(2, 'hours').format('X');
     this.tides = {
-      timeStart: 1539561600,
+      extremes: [],
+      timeStart: yesterday,
       timeRange: 3 * 24 * 3600,
-      timeStartDay: 1539648000,
-      timeEndDay: 1539648000 + (24 * 3600)
-    }
+      timeStartDay: parseInt(today),
+      timeEndDay: parseInt(today) + (24 * 3600),
+      range: []
+    };
+    // [previousDay][currentDay][nextDay]
+
+    this.previousPlotPosition = new Vector2();
+    this.time = {t: 0}
+
+    console.log(this.tides);
 
   }
 
+  componentDidMount() {
+
+    this.initStage();
+    this.getTides(this);
+    this.show();
+
+  }
+
+  initStage() {
+    this.app = new PIXI.Application({
+        width: this.plotSize.width + 100,
+        height: this.plotSize.height,
+        antialias: true,    // default: false
+        transparent: false, // default: false
+        resolution: 1       // default: 1
+      }
+    );
+
+    this.app.view.id = 'pixi-app-view';
+    this.canvasWrapper.appendChild(this.app.view);
+
+    this.gfx = new PIXI.Container();
+    this.controlLayer = new PIXI.Container();
+    this.gridLayer = new PIXI.Container();
+    this.pointerLayer = new PIXI.Container();
+    this.waterLayer = new PIXI.Container();
+    this.flowLayer = new PIXI.Container();
+    this.app.stage.addChild(this.gridLayer);
+    this.app.stage.addChild(this.gfx);
+    this.app.stage.addChild(this.controlLayer);
+    this.app.stage.addChild(this.pointerLayer);
+    this.app.stage.addChild(this.waterLayer);
+    this.app.stage.addChild(this.flowLayer);
+
+    this.timeDisplay = new PIXI.Text('0', {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
+    this.timeDisplay.x = 510;
+    this.timeDisplay.y = 10;
+    this.gridLayer.addChild(this.timeDisplay);
+
+    this.levelDisplay = new PIXI.Text('0 m', {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
+    this.levelDisplay.x = 1500 - 50;
+    this.levelDisplay.y = this.vstart.y + 30;
+    this.gridLayer.addChild(this.levelDisplay);
+
+    this.pointer = new PIXI.Graphics();
+    this.pointer.beginFill(0x00ff00);
+    this.pointer.drawCircle(0, 0, 3);
+    this.pointer.endFill();
+    this.pointer.x = 0;
+    this.pointer.y = 0;
+    this.pointerLayer.addChild(this.pointer);
+  }
+
+  show() {
+    TweenMax.to(this.canvasWrapper, .5, {delay: .25, opacity: 1, ease: Cubic.easeIn});
+  }
+
+  getTides(_this) {
+    let responseData =
+      {
+        "status": 200,
+        "callCount": 1,
+        "copyright": "Tidal data retrieved from www.worldtide.info. Copyright (c) 2014-2017 Brainware LLC. Licensed for use of individual spatial coordinates on behalf of/by an end-user. Copyright (c) 2010-2016 Oregon State University. Licensed for individual spatial coordinates via ModEM-Geophysics Inc. NO GUARANTEES ARE MADE ABOUT THE CORRECTNESS OF THIS DATA. You may not use it if anyone or anything could come to harm as a result of using it (e.g. for navigational purposes).",
+        "requestLat": 53.544382,
+        "requestLon": 9.966491,
+        "responseLat": 53.8333,
+        "responseLon": 9,
+        "atlas": "TPXO_8_v1",
+        "extremes": [
+          {
+            "dt": 1540362651,
+            "date": "2018-10-24T06:30+0000",
+            "height": -1.939,
+            "type": "Low"
+          },
+          {
+            "dt": 1540381659,
+            "date": "2018-10-24T11:47+0000",
+            "height": 2.317,
+            "type": "High"
+          },
+          {
+            "dt": 1540407292,
+            "date": "2018-10-24T18:54+0000",
+            "height": -2.183,
+            "type": "Low"
+          },
+          {
+            "dt": 1540426093,
+            "date": "2018-10-25T00:08+0000",
+            "height": 2.303,
+            "type": "High"
+          },
+          {
+            "dt": 1540451528,
+            "date": "2018-10-25T07:12+0000",
+            "height": -2.172,
+            "type": "Low"
+          },
+          {
+            "dt": 1540470345,
+            "date": "2018-10-25T12:25+0000",
+            "height": 2.577,
+            "type": "High"
+          },
+          {
+            "dt": 1540496116,
+            "date": "2018-10-25T19:35+0000",
+            "height": -2.347,
+            "type": "Low"
+          },
+          {
+            "dt": 1540514742,
+            "date": "2018-10-26T00:45+0000",
+            "height": 2.55,
+            "type": "High"
+          },
+          {
+            "dt": 1540540365,
+            "date": "2018-10-26T07:52+0000",
+            "height": -2.338,
+            "type": "Low"
+          },
+          {
+            "dt": 1540559065,
+            "date": "2018-10-26T13:04+0000",
+            "height": 2.771,
+            "type": "High"
+          },
+          {
+            "dt": 1540584928,
+            "date": "2018-10-26T20:15+0000",
+            "height": -2.423,
+            "type": "Low"
+          }
+        ]
+      }
+    _this.initCurve(responseData);
+    return
+
+    // 3 credits per request
+    const url = 'https://www.worldtides.info/api?extremes&lat=53.544382&lon=9.966491&start=' + _this.tides.timeStart + '&length=259200&key=39457c2e-7d8d-43e1-af1c-655ac83991d3';
+    axios.get(url, {
+      responseType: 'json',
+      headers: {
+        'accept': 'application/json',
+        // 'Authorization': 'f780dfde-e181-4c1d-a246-fe9fbd80274c'
+      },
+    }).then(function (response) {
+      console.log(response.data)
+      _this.initCurve(response.data);
+    }).catch(function (error) {
+      // handle error
+      console.log(error);
+    }).then(function () {
+      // if error debug!
+    });
+  }
+
+  initCurve(data) {
+    this.tides.extremes = data.extremes;
+
+    this.ctrlPoints = [];
+    for (let i = 0; i < this.tides.extremes.length; i++) {
+      let x = this.vstart.x + ((this.tides.extremes[i].dt - this.tides.timeStart) / this.tides.timeRange) * this.plotSize.width;
+      let y = this.vstart.y + (this.tides.extremes[i].height * 50);
+      this.ctrlPoints.push([x, y]);
+    }
+
+    this.spline = new CatmullSpline(this.ctrlPoints);
+
+    this.plotGrid();
+    this.renderSpline();
+    this.renderControlPoints();
+    this.tides.range = this.getRange()
+  }
+
+  plotGrid() {
+    VTPlayerUtils.plotLine(this.gridLayer, this.vstart, new Vector2(this.vstart.x + this.plotSize, this.vstart.y), 0xccccff, 1)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500, 0), new Vector2(this.vstart.x + 500, this.vstart.y + 600), 0xccccff, 1)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 125, 0), new Vector2(this.vstart.x + 500 + 125, this.vstart.y + 600), 0x00ff00, .5)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 250, 0), new Vector2(this.vstart.x + 500 + 250, this.vstart.y + 600), 0x00ff00, .5)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 375, 0), new Vector2(this.vstart.x + 500 + 375, this.vstart.y + 600), 0x00ff00, .5)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 1000, 0), new Vector2(this.vstart.x + 1000, this.vstart.y + 600), 0xccccff, 1)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x, this.vstart.y), new Vector2(this.vstart.x + 1500, this.vstart.y), 0x36ceed, .5)
+  }
 
   renderSpline() {
     let t = 0;
@@ -83,179 +288,78 @@ class TidesVisualizer extends React.Component {
     }
   }
 
-  plotGrid() {
-    VTPlayerUtils.plotLine(this.gridLayer, this.vstart, new Vector2(this.vstart.x + 1500, this.vstart.y), 0xccccff, 1)
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500, 0), new Vector2(this.vstart.x + 500, this.vstart.y + 600), 0xccccff, 1)
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 125, 0), new Vector2(this.vstart.x + 500 + 125, this.vstart.y + 600), 0x00ff00, .5)
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 250, 0), new Vector2(this.vstart.x + 500 + 250, this.vstart.y + 600), 0x00ff00, .5)
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 375, 0), new Vector2(this.vstart.x + 500 + 375, this.vstart.y + 600), 0x00ff00, .5)
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 1000, 0), new Vector2(this.vstart.x + 1000, this.vstart.y + 600), 0xccccff, 1)
-  }
-
-  testSpline() {
-    // https://codepen.io/ahung89/pen/XMdvxM
-
-    let extremes = [
-      {
-        "dt": 1539575013,
-        "date": "2018-10-15T03:43+0000",
-        "height": 2.237,
-        "type": "High"
-      },
-      {
-        "dt": 1539600414,
-        "date": "2018-10-15T10:46+0000",
-        "height": -1.894,
-        "type": "Low"
-      },
-      {
-        "dt": 1539619666,
-        "date": "2018-10-15T16:07+0000",
-        "height": 2.016,
-        "type": "High"
-      },
-      {
-        "dt": 1539644717,
-        "date": "2018-10-15T23:05+0000",
-        "height": -1.604,
-        "type": "Low"
-      },
-      {
-        "dt": 1539664038,
-        "date": "2018-10-16T04:27+0000",
-        "height": 1.926,
-        "type": "High"
-      },
-      {
-        "dt": 1539689341,
-        "date": "2018-10-16T11:29+0000",
-        "height": -1.611,
-        "type": "Low"
-      },
-      {
-        "dt": 1539708854,
-        "date": "2018-10-16T16:54+0000",
-        "height": 1.634,
-        "type": "High"
-      },
-      {
-        "dt": 1539733632,
-        "date": "2018-10-16T23:47+0000",
-        "height": -1.328,
-        "type": "Low"
-      },
-      {
-        "dt": 1539753382,
-        "date": "2018-10-17T05:16+0000",
-        "height": 1.605,
-        "type": "High"
-      },
-      {
-        "dt": 1539778649,
-        "date": "2018-10-17T12:17+0000",
-        "height": -1.354,
-        "type": "Low"
-      },
-      {
-        "dt": 1539798518,
-        "date": "2018-10-17T17:48+0000",
-        "height": 1.29,
-        "type": "High"
-      }
-    ];
-
-
-    this.ctrlPoints = [];
-    for (let i = 0; i < extremes.length; i++) {
-      let x = this.vstart.x + ((extremes[i].dt - this.tides.timeStart) / this.tides.timeRange) * 1500;
-      let y = this.vstart.y + (extremes[i].height * 50);
-      this.ctrlPoints.push([x, y]);
-      console.log((extremes[i].dt - this.tides.timeStart) / this.tides.timeRange);
+  getRange() {
+    let t = 0;
+    let progress = 0;
+    let pos = [];
+    let range = [];
+    while (t < 1) {
+      t += .001;
+      progress = t * (this.ctrlPoints.length - 3);
+      pos = this.spline.evaluate(progress);
+      if (Math.floor(pos[0]) == 500) range[0] = progress;
+      if (Math.floor(pos[0]) == 1000) range[1] = progress;
     }
-
-    // [previousDay][currentDay][nextDay]
-    this.spline = new CatmullSpline(this.ctrlPoints);
-
-    this.plotGrid();
-    this.renderSpline();
-    this.renderControlPoints();
-  }
-
-  componentDidMount() {
-
-    this.initialLoad();
-
-
-  }
-
-  initialLoad() {
-    PIXI.loader.add(tidesReferenz).load(this.loadReady);
+    return range;
   }
 
 
-  show() {
-    TweenMax.to(this.canvasWrapper, .5, {delay: .25, opacity: 1, ease: Cubic.easeIn});
+  playTides() {
+    this.time.t = 0;
+
+    TweenMax.to(this.time, 60, {
+      t: 1,
+      ease: Linear.easeNone,
+      onUpdate: () => {
+        this.plotTime(this.time.t)
+      },
+      onUpdateScope: this,
+      onComplete: () => {
+        this.previousPlotPosition = new Vector2();
+        this.playTides();
+      },
+      onCompleteScope: this
+    })
   }
 
-  loadReady() {
-    this.initStage();
-    this.testSpline();
-    this.show();
+  stopTides() {
+    TweenMax.killTweensOf(this.time)
   }
 
-  initStage() {
-    this.app = new PIXI.Application({
-        width: 1500,
-        height: 600,
-        antialias: true,    // default: false
-        transparent: false, // default: false
-        resolution: 1       // default: 1
-      }
-    );
-
-    this.app.view.id = 'pixi-app-view';
-    this.canvasWrapper.appendChild(this.app.view);
-
-
-    let sprite = new PIXI.Sprite(PIXI.loader.resources[tidesReferenz].texture);
-    sprite.y = 101;
-    sprite.alpha = .5;
-    // this.app.stage.addChild(sprite);
-
-    this.gfx = new PIXI.Container();
-    this.controlLayer = new PIXI.Container();
-    this.gridLayer = new PIXI.Container();
-    this.pointerLayer = new PIXI.Container();
-    this.app.stage.addChild(this.gridLayer);
-    this.app.stage.addChild(this.gfx);
-    this.app.stage.addChild(this.controlLayer);
-    this.app.stage.addChild(this.pointerLayer);
-
-    this.timeDisplay = new PIXI.Text('0', {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
-    this.timeDisplay.x = 510;
-    this.timeDisplay.y = 10;
-    this.gridLayer.addChild(this.timeDisplay)
-
-
-    this.pointer = new PIXI.Graphics();
-    this.pointer.beginFill(0x00ff00);
-    this.pointer.drawCircle(0, 0, 3);
-    this.pointer.endFill();
-    this.pointer.x = 0;
-    this.pointer.y = 0;
-    this.pointerLayer.addChild(this.pointer);
-  }
 
   plotTime(value) {
     const progress = value * (this.ctrlPoints.length - 3);
-    const mappedProgress = mathUtils.convertToRange(progress, [0, this.ctrlPoints.length - 3], [2.152, 6.032]);
+    const mappedProgress = mathUtils.convertToRange(progress, [0, this.ctrlPoints.length - 3], [this.tides.range[0], this.tides.range[1]]);
     const pos = this.spline.evaluate(mappedProgress);
     const currentPosition = new Vector2(pos[0], pos[1]);
+    if (this.previousPlotPosition.length() > 0) {
+      const tangent = Vector2.subtract(currentPosition, this.previousPlotPosition).normalize();
+      const tangentRAD = Vector2.getAngleRAD(tangent);
+
+      if (this.flowLayer.children.length > 0) this.flowLayer.removeChildAt(0);
+      const start = new Vector2(750, 500);
+      const end = start.clone();
+      end.add(new Vector2(tangentRAD * 100, 0))
+
+      VTPlayerUtils.plotLine(this.flowLayer, start, end, tangentRAD > 0 ? 0xea2323 : 0x36ceed, 5 * Math.abs(tangentRAD))
+    }
+    this.previousPlotPosition = currentPosition.clone();
+
     this.pointer.x = currentPosition.x;
     this.pointer.y = currentPosition.y;
 
-    // 24.10 => 1540339200
-    // 25.10 => 1540425600
+    if (this.waterLayer.children.length > 0) this.waterLayer.removeChildAt(0);
+    const waterLevel = 2.5 - (.9 * (this.pointer.y - this.vstart.y) / 50);
+    this.levelDisplay.text = waterLevel.toFixed(2) + ' m';
+    let level = new PIXI.Graphics();
+    level.beginFill(0x3578ea);
+    level.drawRect(0, 0, 50, -waterLevel * 50);
+    level.endFill();
+    level.x = 1500 - 50;
+    level.y = this.vstart.y;
+    this.waterLayer.addChild(level);
+
+
     const time = Math.round(mathUtils.convertToRange(value, [0, 1], [this.tides.timeStartDay, this.tides.timeEndDay])) - this.tides.timeStartDay;
     const minutes = time / 60;
     const hours = Math.floor(time / 3600);
@@ -263,10 +367,10 @@ class TidesVisualizer extends React.Component {
   }
 
   updateData(data) {
+    this.stopTides();
     this.setState({data});
     this.plotTime(data.progress);
   }
-
 
   render() {
     const {data} = this.state;
@@ -278,13 +382,14 @@ class TidesVisualizer extends React.Component {
         <div className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}></div>
         <DatGui data={data} onUpdate={this.update}>
           <DatNumber path='progress' label='progress' min={0} max={1} step={0.001}/>
-          {/*<DatButton label="Play" onClick={this.playTimeline}/>*/}
+          <DatButton label="Play" onClick={this.playTides}/>
+          <DatButton label="Stop" onClick={this.stopTides}/>
           {/*<DatButton label="Pause" onClick={this.pauseTimeline}/>*/}
           {/*<DatBoolean path='showPath' label='showPath'/>*/}
           {/*<DatBoolean path='showBounds' label='showBounds'/>*/}
         </DatGui>
         <a href={'/'}>
-          <CloseIcon fill={'#000000'} className="close-icon"/>
+          <CloseIcon fill={'#ffffff'} className="close-icon"/>
         </a>
       </div>
 

@@ -14,7 +14,7 @@ import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 import VTRecorderUtils from "./VTRecorderUtils";
 
-const trackData = require("./trackData/10_24_17_41_l240_vesselData.json");
+const trackData = require("./trackData/10_25_15_40_l360_vesselData.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -40,7 +40,7 @@ class VTPlayer extends React.Component {
     this.playTimeline = this.playTimeline.bind(this);
     this.pauseTimeline = this.pauseTimeline.bind(this);
 
-    this.trackLength = 240;
+    this.trackLength = 360;
 
   }
 
@@ -128,11 +128,20 @@ class VTPlayer extends React.Component {
       {
         index: 5,
         minLong: 9.96731037037037,
-        maxLong:  9.97059925925926,
+        maxLong: 9.97059925925926,
         minLat: 53.54338631382501,
         maxLat: 53.54064599871843,
         collisionLineStart: VTPlayerUtils.getVectorFromGeoPoint(53.54203790546803, 9.96880864420573),
         collisionLineEnd: VTPlayerUtils.getVectorFromGeoPoint(53.54079823911029, 9.969247162724248)
+      },
+      {
+        index: 6,
+        minLong: 9.953277777777778,
+        maxLong: 9.958064940502025,
+        minLat: 53.53288177258312,
+        maxLat: 53.5291410243136,
+        collisionLineStart: VTPlayerUtils.getVectorFromGeoPoint(53.53179434661724, 9.955214570131655),
+        collisionLineEnd: VTPlayerUtils.getVectorFromGeoPoint(53.53061992585727, 9.957991851851851)
       }
 
     ];
@@ -144,6 +153,7 @@ class VTPlayer extends React.Component {
     VTPlayerUtils.plotCollisionBounds(this.collisionBounds[3], this.boundsLayer);
     VTPlayerUtils.plotCollisionBounds(this.collisionBounds[4], this.boundsLayer);
     VTPlayerUtils.plotCollisionBounds(this.collisionBounds[5], this.boundsLayer);
+    VTPlayerUtils.plotCollisionBounds(this.collisionBounds[6], this.boundsLayer);
 
     this.initTimeline();
     this.parseTrackData(trackData);
@@ -191,6 +201,13 @@ class VTPlayer extends React.Component {
   }
 
 
+  getDistance(trackPoint_1, trackPoint_2) {
+    const v1 = new Vector2(trackPoint_1['lat'], trackPoint_1['lon']);
+    const v2 = new Vector2(trackPoint_2['lat'], trackPoint_2['lon']);
+    return Vector2.getDistance(v1, v2);
+  }
+
+
   optimizeTrackData(_vesselData) {
     // console.log('optimize', _vesselData['mmsi'])
 
@@ -199,6 +216,9 @@ class VTPlayer extends React.Component {
 
       const currentTrackPoint = _vesselData['trackData'][i];
       const nextTrackPoint = _vesselData['trackData'][i + 1];
+
+      // debug!
+      // console.log(this.getDistance(currentTrackPoint, nextTrackPoint) > 0.01, i)
 
       // check for intersections
       for (let b = 0; b < this.collisionBounds.length; b++) {
@@ -235,13 +255,16 @@ class VTPlayer extends React.Component {
         // ——————————————————————————————————————————————————
         // offset points 90° =>  to origin line
         // ——————————————————————————————————————————————————
-        const line_dir = Vector2.subtract(v1, v2).normalize();
-        const collision_dir = new Vector2(-line_dir.y, line_dir.x);
+        // const line_dir = Vector2.subtract(v1, v2).normalize();
+        // const collision_dir = new Vector2(-line_dir.y, line_dir.x);
+        // console.log(Vector2.getAngleDEG(collision_dir));
+        // collision_dir.negate();
+        // console.log(Vector2.getAngleDEG(collision_dir));
 
         // ——————————————————————————————————————————————————
         // offset points => cross line direction
         // ——————————————————————————————————————————————————
-        // const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
+        const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
 
         const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
         const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
@@ -265,8 +288,8 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 0,
-      end: 100,
+      start: 33,
+      end: 34,
       _count: 0
     };
 
@@ -299,12 +322,11 @@ class VTPlayer extends React.Component {
     let display = new PIXI.Text(_vesselData['mmsi'], {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xff0000, align: 'center'});
     let vesselGraphics = new PIXI.Graphics();
     let vesselColor = 0x1f164f;
-    if(_vesselData['mmsi'] == 211437270) vesselColor = 0xf3d611;
+    if (_vesselData['mmsi'] == 211437270) vesselColor = 0xf3d611;
     vesselGraphics.beginFill(vesselColor);
     vesselGraphics.drawCircle(0, 0, 2);
     // vesselGraphics.drawPolygon([0, -5, 4, 5, -4, 5]);
     vesselGraphics.endFill();
-
 
 
     vessel.addChild(vesselGraphics);
