@@ -255,16 +255,14 @@ class VTPlayer extends React.Component {
         // ——————————————————————————————————————————————————
         // offset points 90° =>  to origin line
         // ——————————————————————————————————————————————————
-        // const line_dir = Vector2.subtract(v1, v2).normalize();
-        // const collision_dir = new Vector2(-line_dir.y, line_dir.x);
-        // console.log(Vector2.getAngleDEG(collision_dir));
-        // collision_dir.negate();
-        // console.log(Vector2.getAngleDEG(collision_dir));
+        const line_dir = Vector2.subtract(v1, v2).normalize();
+        const collision_dir = new Vector2(-line_dir.y, line_dir.x);
+        if (Vector2.getAngleRAD(line_dir) < 0) collision_dir.negate();
 
         // ——————————————————————————————————————————————————
         // offset points => cross line direction
         // ——————————————————————————————————————————————————
-        const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
+        // const collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
 
         const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
         const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
@@ -287,9 +285,10 @@ class VTPlayer extends React.Component {
 
   parseTrackData(_data) {
     let validCounter = 0;
+    // 51
     let range = {
-      start: 33,
-      end: 34,
+      start: 0,
+      end: 60,
       _count: 0
     };
 
