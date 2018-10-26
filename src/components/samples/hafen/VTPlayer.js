@@ -3,7 +3,7 @@ import connect from "react-redux/es/connect/connect";
 import 'gsap/TweenMax';
 import 'gsap/TimelineMax';
 import 'react-dat-gui/build/react-dat-gui.css';
-import DatGui, {DatBoolean, DatButton, DatColor, DatNumber, DatString} from 'react-dat-gui';
+import DatGui, {DatBoolean, DatButton, DatNumber} from 'react-dat-gui';
 import * as PIXI from 'pixi.js'
 import CloseIcon from 'core/icons/close.inline.svg';
 import '../Scene.scss'
@@ -12,9 +12,9 @@ import {Vector2} from "../../../utils/vector2";
 
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
-import VTRecorderUtils from "./VTRecorderUtils";
 
-const trackData = require("./trackData/10_25_15_40_l360_vesselData.json");
+const trackData = require("./trackData/10_26_16_49_l20_vesselData.json");
+const infoTrack = require("./trackData/10_26_16_49_l20_infoTrack.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -27,6 +27,8 @@ class VTPlayer extends React.Component {
       progress: 0,
       showPath: true,
       showBounds: true,
+      showStatic: true,
+      showInfo: false,
       feelsLike: '#2FA1D6'
     }
   };
@@ -40,7 +42,8 @@ class VTPlayer extends React.Component {
     this.playTimeline = this.playTimeline.bind(this);
     this.pauseTimeline = this.pauseTimeline.bind(this);
 
-    this.trackLength = 360;
+    this.trackLength = 20;
+    console.log(infoTrack)
 
   }
 
@@ -60,6 +63,16 @@ class VTPlayer extends React.Component {
     this.boundsLayer = new PIXI.Container();
     this.pathLayer = new PIXI.Container();
     this.vesselLayer = new PIXI.Container();
+    this.staticVesselLayer = new PIXI.Container();
+    this.statsLayer = new PIXI.Container();
+    this.statsLayer.y = 1080 - 220;
+    this.statsLinesLayer = new PIXI.Container();
+    this.statsLinesLayer.y = this.statsLayer.y + 13;
+
+    if (this.statsLayer && this.statsLinesLayer) {
+      this.statsLayer.visible = this.statsLinesLayer.visible = this.state.data.showInfo
+    }
+
 
     let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
     this.mapLayer.addChild(sprite);
@@ -76,7 +89,10 @@ class VTPlayer extends React.Component {
     this.app.stage.addChild(this.mapLayer);
     this.app.stage.addChild(this.boundsLayer);
     this.app.stage.addChild(this.pathLayer);
+    this.app.stage.addChild(this.staticVesselLayer);
     this.app.stage.addChild(this.vesselLayer);
+    this.app.stage.addChild(this.statsLayer);
+    this.app.stage.addChild(this.statsLinesLayer);
 
 
     this.collisionBounds = [
@@ -142,8 +158,16 @@ class VTPlayer extends React.Component {
         maxLat: 53.5291410243136,
         collisionLineStart: VTPlayerUtils.getVectorFromGeoPoint(53.53179434661724, 9.955214570131655),
         collisionLineEnd: VTPlayerUtils.getVectorFromGeoPoint(53.53061992585727, 9.957991851851851)
+      },
+      {
+        index: 7,
+        minLong: 9.952912347909432,
+        maxLong: 9.958868888888889,
+        minLat: 53.53629629286376,
+        maxLat: 53.53242505339869,
+        collisionLineStart: VTPlayerUtils.getVectorFromGeoPoint(53.53425193013641, 9.955324199761284),
+        collisionLineEnd: VTPlayerUtils.getVectorFromGeoPoint(53.53401269694161, 9.957626421983507)
       }
-
     ];
 
 
@@ -154,10 +178,11 @@ class VTPlayer extends React.Component {
     VTPlayerUtils.plotCollisionBounds(this.collisionBounds[4], this.boundsLayer);
     VTPlayerUtils.plotCollisionBounds(this.collisionBounds[5], this.boundsLayer);
     VTPlayerUtils.plotCollisionBounds(this.collisionBounds[6], this.boundsLayer);
+    VTPlayerUtils.plotCollisionBounds(this.collisionBounds[7], this.boundsLayer);
 
     this.initTimeline();
     this.parseTrackData(trackData);
-
+    this.parseStaticData(trackData);
 
     this.show();
   }
@@ -165,6 +190,24 @@ class VTPlayer extends React.Component {
 
   show() {
     TweenMax.to(this.canvasWrapper, .5, {delay: .25, opacity: 1, ease: Cubic.easeIn});
+  }
+
+  initInfo() {
+    let shape = new PIXI.Graphics();
+    shape.beginFill(0x000000, .85);
+    // shape.lineStyle(.5, 0x000000);
+    shape.drawRect(0, 0, 230, 220);
+    shape.endFill();
+    this.statsLayer.addChild(shape);
+
+    for (let i = 0; i < VTPlayerUtils.vesselTypes.length; i++) {
+      let display = new PIXI.Text(VTPlayerUtils.vesselTypes[i], {fontFamily: 'Tahoma', fontSize: 12, fill: this.getColorByType(VTPlayerUtils.vesselTypes[i]), align: 'center'});
+      display.x = 10;
+      display.y = 5 + i * 15;
+      this.statsLayer.addChild(display);
+    }
+
+    this.getInfoFrame(0);
   }
 
   initStage() {
@@ -182,9 +225,27 @@ class VTPlayer extends React.Component {
 
   }
 
+  getInfoFrame(frame) {
+    // console.log(infoTrack[frame]['vesselTypes'])
+
+    if (!this.state.data.showInfo) return;
+
+    for (let i = 0; i < this.statsLinesLayer.children.length; i++) {
+      this.statsLinesLayer.children[i].destroy();
+    }
+    this.statsLinesLayer.removeChildren(0, this.statsLinesLayer.children.length);
+
+    for (let i = 0; i < VTPlayerUtils.vesselTypes.length; i++) {
+      const count = infoTrack[frame]['vesselTypes'][i];
+      VTPlayerUtils.plotLine(this.statsLinesLayer, new Vector2(120, i * 15), new Vector2(120 + count * 2, i * 15), this.getColorByType(VTPlayerUtils.vesselTypes[i]), 5)
+    }
+  }
+
   initTimeline() {
     this.vesselTimeline = new TimelineMax({
       onUpdate: () => {
+        const currentFrame = Math.round(this.vesselTimeline.progress() * (this.trackLength - 1));
+        this.getInfoFrame(currentFrame);
         this.setState({
           data: {
             ...this.state.data,
@@ -257,6 +318,7 @@ class VTPlayer extends React.Component {
         // ——————————————————————————————————————————————————
         const line_dir = Vector2.subtract(v1, v2).normalize();
         const collision_dir = new Vector2(-line_dir.y, line_dir.x);
+        // console.log(Vector2.getAngleRAD(line_dir))
         if (Vector2.getAngleRAD(line_dir) < 0) collision_dir.negate();
 
         // ——————————————————————————————————————————————————
@@ -285,21 +347,20 @@ class VTPlayer extends React.Component {
 
   parseTrackData(_data) {
     let validCounter = 0;
-    // 51
     let range = {
       start: 0,
       end: 60,
       _count: 0
     };
 
+    // TODO => SAVE ONLY MOVED VESSELS TO POOL!
+    console.log(_data.vesselPool.length)
+
     for (let i = 0; i < _data.vesselPool.length; i++) {
 
       let hasMoved = _data.vesselPool[i]['hasMoved'];
-      let inMapRange = _data.vesselPool[i]['inMapRange'];
-      let validData = _data.vesselPool[i]['valid'];
-      validData = true;
 
-      if (hasMoved && inMapRange && validData) {
+      if (hasMoved) {
         if (validCounter >= range.start) {
           if (validCounter < range.end) {
             this.optimizeTrackData(_data.vesselPool[i]);
@@ -315,24 +376,48 @@ class VTPlayer extends React.Component {
   }
 
 
+  plotStaticVessel(_vesselData) {
+    let vessel = new PIXI.Container();
+    let vesselGraphics = new PIXI.Graphics();
+    const vesselType = _vesselData['aisStatic']['type'];
+    const vesselColor = this.getColorByType(vesselType);
+    vesselGraphics.beginFill(vesselColor);
+    vesselGraphics.drawCircle(0, 0, 2);
+    vesselGraphics.endFill();
+    vessel.addChild(vesselGraphics);
+
+    let position = VTPlayerUtils.cartesianFromLatLong(_vesselData['aisPosition'].lat, _vesselData['aisPosition'].lon);
+    vessel.x = position[0];
+    vessel.y = position[1];
+    this.staticVesselLayer.addChild(vessel);
+
+    vessel.data = _vesselData;
+    vessel.interactive = true;
+    vessel.cursor = 'pointer';
+    vessel.on('click', (event) => {
+      console.log(event.target.data);
+    });
+  }
+
+  parseStaticData(_data) {
+    const staticVessels = _data['meta']['staticVessels'];
+    for (let i = 0; i < staticVessels.length; i++) {
+      this.plotStaticVessel(staticVessels[i])
+    }
+  }
+
+
   initVessel(_vesselData, _count) {
 
     let vessel = new PIXI.Container();
-    let display = new PIXI.Text(_vesselData['mmsi'], {fontFamily: 'Segoe UI', fontSize: 10, fill: 0xff0000, align: 'center'});
     let vesselGraphics = new PIXI.Graphics();
-    let vesselColor = 0x1f164f;
-    if (_vesselData['mmsi'] == 211437270) vesselColor = 0xf3d611;
+    const vesselType = _vesselData['aisStatic']['type'];
+    const vesselColor = this.getColorByType(vesselType);
+    // if (_vesselData['mmsi'] == 211437270) vesselColor = 0xf3d611;
     vesselGraphics.beginFill(vesselColor);
-    vesselGraphics.drawCircle(0, 0, 2);
-    // vesselGraphics.drawPolygon([0, -5, 4, 5, -4, 5]);
+    vesselGraphics.drawCircle(0, 0, 3);
     vesselGraphics.endFill();
-
-
     vessel.addChild(vesselGraphics);
-    if (!_vesselData['valid']) {
-      vessel.addChild(display);
-    }
-
     this.vesselLayer.addChild(vessel);
 
     vessel.data = _vesselData;
@@ -383,24 +468,54 @@ class VTPlayer extends React.Component {
   }
 
 
-  // getColorByStatus(status) {
-  //   let color = 0x000000;
-  //   switch (status) {
-  //     case 'moored':
-  //       color = 0xff0000;
-  //       break;
-  //     case 'waiting':
-  //       color = 0x0000ff;
-  //       break;
-  //     case 'moving':
-  //       color = 0x00ff00;
-  //       break;
-  //     case 'lost':
-  //       color = 0x2ad2f6;
-  //       break;
-  //   }
-  //   return color;
-  // }
+  getColorByType(type) {
+    let color = 0x000000;
+    switch (type) {
+      case 'pleasure_crafts':
+        color = 0x971fae;
+        break;
+      case 'tankships':
+        color = 0x6636B8;
+        break;
+      case 'cargo_ships':
+        color = 0x444EB4;
+        break;
+      case 'passenger_ships':
+        color = 0x3B95F2;
+        break;
+      case 'sailing_vessels':
+        color = 0x3DA8F2;
+        break;
+      case 'tugboats':
+        color = 0x42BCD5;
+        break;
+      case 'dredgers':
+        color = 0x329788;
+        break;
+      case 'pilot_vessels':
+        color = 0x59B154;
+        break;
+      case 'ekranoplans':
+        color = 0x91C74F;
+        break;
+      case 'towing_vessels':
+        color = 0xCEDE40;
+        break;
+      case 'rescue_vessels':
+        color = 0xFBEC42;
+        break;
+      case 'coast_guard_ships':
+        color = 0xF8C132;
+        break;
+      case 'high-speed_crafts':
+        color = 0xF59828;
+        break;
+      case 'others':
+        color = 0xF4551E;
+        break;
+    }
+    return color;
+  }
 
 
   playTimeline() {
@@ -420,6 +535,9 @@ class VTPlayer extends React.Component {
     const {data} = this.state;
     if (this.pathLayer) this.pathLayer.visible = data.showPath;
     if (this.boundsLayer) this.boundsLayer.visible = data.showBounds;
+    if (this.staticVesselLayer) this.staticVesselLayer.visible = data.showStatic;
+    if (this.statsLayer && this.statsLinesLayer) this.statsLayer.visible = this.statsLinesLayer.visible = data.showInfo;
+    if (data.showInfo && this.statsLayer.children.length == 0) this.initInfo();
 
     return (
       <div className={'wrapper'}>
@@ -430,6 +548,8 @@ class VTPlayer extends React.Component {
           <DatButton label="Pause" onClick={this.pauseTimeline}/>
           <DatBoolean path='showPath' label='showPath'/>
           <DatBoolean path='showBounds' label='showBounds'/>
+          <DatBoolean path='showStatic' label='showStatic'/>
+          <DatBoolean path='showInfo' label='showInfo'/>
           {/*<DatColor path='feelsLike' label='Feels Like'/>*/}
         </DatGui>
         <a href={'/'}>

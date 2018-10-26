@@ -151,11 +151,29 @@ VTRecorderUtils.collisionBounds = [
   {
     index: 5,
     minLong: 9.96731037037037,
-    maxLong:  9.97059925925926,
+    maxLong: 9.97059925925926,
     minLat: 53.54338631382501,
     maxLat: 53.54064599871843,
     collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.54203790546803, 9.96880864420573),
     collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.54079823911029, 9.969247162724248)
+  },
+  {
+    index: 6,
+    minLong: 9.953277777777778,
+    maxLong: 9.958064940502025,
+    minLat: 53.53288177258312,
+    maxLat: 53.5291410243136,
+    collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.53179434661724, 9.955214570131655),
+    collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.53061992585727, 9.957991851851851)
+  },
+  {
+    index: 7,
+    minLong: 9.952912347909432,
+    maxLong: 9.958868888888889,
+    minLat: 53.53629629286376,
+    maxLat: 53.53242505339869,
+    collisionLineStart: VTRecorderUtils.getVectorFromGeoPoint(53.53425193013641, 9.955324199761284),
+    collisionLineEnd: VTRecorderUtils.getVectorFromGeoPoint(53.53401269694161, 9.957626421983507)
   }
 ];
 

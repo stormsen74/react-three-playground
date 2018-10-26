@@ -432,6 +432,19 @@ class VTRecorder {
     return filteredPool;
   }
 
+  getStaticVessels(vessels) {
+    let staticVessels = [];
+    for (let i = 0; i < vessels.length; i++) {
+      const hasMoved = vessels[i]['hasMoved'];
+      if (!hasMoved) {
+        const vesselCopy = Object.assign({}, vessels[i]);
+        vesselCopy['trackData'] = [];
+        staticVessels.push(vesselCopy);
+      }
+    }
+    return staticVessels;
+  }
+
   optimizePool(vesselPool) {
     for (let i = 0; i < vesselPool.length; i++) {
       const hasMoved = vesselPool[i]['hasMoved'];
@@ -483,6 +496,7 @@ class VTRecorder {
         // ——————————————————————————————————————————————————
         const line_dir = Vector2.subtract(v1, v2).normalize();
         const collision_dir = new Vector2(-line_dir.y, line_dir.x);
+        if (Vector2.getAngleRAD(line_dir) < 0) collision_dir.negate();
 
         // ——————————————————————————————————————————————————
         // offset points => cross line direction
@@ -527,6 +541,7 @@ class VTRecorder {
 
     // const _vesselDataCopy = [...this.vesselPool];
     const _filteredVesselPool = this.filterVesselPool(this.vesselPool);
+    const _staticVessels = this.getStaticVessels(_filteredVesselPool);
     if (!asRawData) this.optimizePool(_filteredVesselPool);
 
     console.log('filteredPoolLength: ', _filteredVesselPool.length);
@@ -534,7 +549,10 @@ class VTRecorder {
     let data = {
       // meta: 'meta info => timestamp, numVessels, etc.',
       meta: {
-        numVessels: _filteredVesselPool.length
+        numVessels: _filteredVesselPool.length,
+        numStaticVessels: _staticVessels.length,
+        numMovingVessels: _filteredVesselPool.length - _staticVessels.length,
+        staticVessels: _staticVessels
       },
       // vesselPool: this.vesselPool
       vesselPool: _filteredVesselPool

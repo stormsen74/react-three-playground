@@ -17,6 +17,23 @@ VTPlayerUtils.mapData = {
   }
 };
 
+VTPlayerUtils.vesselTypes = [
+  'pleasure_crafts',
+  'tankships',
+  'cargo_ships',
+  'passenger_ships',
+  'sailing_vessels',
+  'tugboats',
+  'dredgers',
+  'pilot_vessels',
+  'ekranoplans',
+  'towing_vessels',
+  'rescue_vessels',
+  'coast_guard_ships',
+  'high-speed_crafts',
+  'others'
+];
+
 VTPlayerUtils.getVectorFromGeoPoint = (lat, long) => {
   const pos = VTPlayerUtils.cartesianFromLatLong(lat, long);
   return new Vector2(pos[0], pos[1])
@@ -58,7 +75,7 @@ VTPlayerUtils.plotCollisionBounds = (boundsObject, layer) => {
   let bottomRight = VTPlayerUtils.cartesianFromLatLong(boundsObject.maxLat, boundsObject.maxLong);
   let bottomLeft = VTPlayerUtils.cartesianFromLatLong(boundsObject.maxLat, boundsObject.minLong);
 
-  let display = new PIXI.Text(boundsObject.index, {fontFamily: 'Arial', fontSize: 15, fill: 0x000000, align: 'center'});
+  let display = new PIXI.Text(boundsObject.index, {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
   display.x = topLeft[0];
   display.y = topLeft[1] - 17;
 

@@ -3,12 +3,11 @@ import connect from "react-redux/es/connect/connect";
 import 'gsap/TweenMax';
 import 'gsap/TimelineMax';
 import 'react-dat-gui/build/react-dat-gui.css';
-import DatGui, {DatBoolean, DatButton, DatColor, DatNumber, DatString} from 'react-dat-gui';
+import DatGui, {DatButton, DatNumber} from 'react-dat-gui';
 import * as PIXI from 'pixi.js'
 import CloseIcon from 'core/icons/close.inline.svg';
 import '../Scene.scss'
 import {Vector2} from "../../../utils/vector2";
-import regression from 'regression';
 import moment from 'moment';
 
 
@@ -141,80 +140,18 @@ class TidesVisualizer extends React.Component {
       {
         "status": 200,
         "callCount": 1,
-        "copyright": "Tidal data retrieved from www.worldtide.info. Copyright (c) 2014-2017 Brainware LLC. Licensed for use of individual spatial coordinates on behalf of/by an end-user. Copyright (c) 2010-2016 Oregon State University. Licensed for individual spatial coordinates via ModEM-Geophysics Inc. NO GUARANTEES ARE MADE ABOUT THE CORRECTNESS OF THIS DATA. You may not use it if anyone or anything could come to harm as a result of using it (e.g. for navigational purposes).",
+        "copyright": "Tidal data retrieved from www.worldtide.info. Copyright (c) 2014-2017 Brainware LLC. Licensed for use of individual spatial coordinates on behalf of\/by an end-user. Copyright (c) 2010-2016 Oregon State University. Licensed for individual spatial coordinates via ModEM-Geophysics Inc. NO GUARANTEES ARE MADE ABOUT THE CORRECTNESS OF THIS DATA. You may not use it if anyone or anything could come to harm as a result of using it (e.g. for navigational purposes).",
         "requestLat": 53.544382,
         "requestLon": 9.966491,
         "responseLat": 53.8333,
         "responseLon": 9,
         "atlas": "TPXO_8_v1",
-        "extremes": [
-          {
-            "dt": 1540362651,
-            "date": "2018-10-24T06:30+0000",
-            "height": -1.939,
-            "type": "Low"
-          },
-          {
-            "dt": 1540381659,
-            "date": "2018-10-24T11:47+0000",
-            "height": 2.317,
-            "type": "High"
-          },
-          {
-            "dt": 1540407292,
-            "date": "2018-10-24T18:54+0000",
-            "height": -2.183,
-            "type": "Low"
-          },
-          {
-            "dt": 1540426093,
-            "date": "2018-10-25T00:08+0000",
-            "height": 2.303,
-            "type": "High"
-          },
-          {
-            "dt": 1540451528,
-            "date": "2018-10-25T07:12+0000",
-            "height": -2.172,
-            "type": "Low"
-          },
-          {
-            "dt": 1540470345,
-            "date": "2018-10-25T12:25+0000",
-            "height": 2.577,
-            "type": "High"
-          },
-          {
-            "dt": 1540496116,
-            "date": "2018-10-25T19:35+0000",
-            "height": -2.347,
-            "type": "Low"
-          },
-          {
-            "dt": 1540514742,
-            "date": "2018-10-26T00:45+0000",
-            "height": 2.55,
-            "type": "High"
-          },
-          {
-            "dt": 1540540365,
-            "date": "2018-10-26T07:52+0000",
-            "height": -2.338,
-            "type": "Low"
-          },
-          {
-            "dt": 1540559065,
-            "date": "2018-10-26T13:04+0000",
-            "height": 2.771,
-            "type": "High"
-          },
-          {
-            "dt": 1540584928,
-            "date": "2018-10-26T20:15+0000",
-            "height": -2.423,
-            "type": "Low"
-          }
-        ]
+        "extremes": [{"dt": 1540426093, "date": "2018-10-25T00:08+0000", "height": 2.303, "type": "High"}, {"dt": 1540451529, "date": "2018-10-25T07:12+0000", "height": -2.171, "type": "Low"}, {"dt": 1540470341, "date": "2018-10-25T12:25+0000", "height": 2.578, "type": "High"}, {"dt": 1540496115, "date": "2018-10-25T19:35+0000", "height": -2.347, "type": "Low"}, {"dt": 1540514743, "date": "2018-10-26T00:45+0000", "height": 2.55, "type": "High"}, {"dt": 1540540365, "date": "2018-10-26T07:52+0000", "height": -2.338, "type": "Low"}, {"dt": 1540559064, "date": "2018-10-26T13:04+0000", "height": 2.771, "type": "High"}, {"dt": 1540584928, "date": "2018-10-26T20:15+0000", "height": -2.423, "type": "Low"}, {"dt": 1540603449, "date": "2018-10-27T01:24+0000", "height": 2.726, "type": "High"}, {"dt": 1540629224, "date": "2018-10-27T08:33+0000", "height": -2.424, "type": "Low"}, {"dt": 1540647860, "date": "2018-10-27T13:44+0000", "height": 2.869, "type": "High"}, {
+          "dt": 1540673787,
+          "date": "2018-10-27T20:56+0000",
+          "height": -2.408,
+          "type": "Low"
+        }]
       }
     _this.initCurve(responseData);
     return
@@ -228,7 +165,7 @@ class TidesVisualizer extends React.Component {
         // 'Authorization': 'f780dfde-e181-4c1d-a246-fe9fbd80274c'
       },
     }).then(function (response) {
-      console.log(response.data)
+      console.log(response.data);
       _this.initCurve(response.data);
     }).catch(function (error) {
       // handle error
@@ -311,7 +248,13 @@ class TidesVisualizer extends React.Component {
       t: 1,
       ease: Linear.easeNone,
       onUpdate: () => {
-        this.plotTime(this.time.t)
+        this.plotTime(this.time.t);
+        this.setState({
+          data: {
+            ...this.state.data,
+            progress: this.time.t
+          }
+        })
       },
       onUpdateScope: this,
       onComplete: () => {
@@ -323,7 +266,7 @@ class TidesVisualizer extends React.Component {
   }
 
   stopTides() {
-    TweenMax.killTweensOf(this.time)
+    TweenMax.killTweensOf(this.time);
   }
 
 
