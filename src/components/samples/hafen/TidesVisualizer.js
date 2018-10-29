@@ -52,6 +52,11 @@ class TidesVisualizer extends React.Component {
       height: 600
     };
 
+    // ——————————————————————————————————————————————————
+    // TRY THIS!
+    // ——————————————————————————————————————————————————
+    // https://www.pegelonline.wsv.de/webservice/ueberblick
+
 
     this.vstart = new Vector2(0, this.plotSize.height * .5);
 
@@ -59,8 +64,9 @@ class TidesVisualizer extends React.Component {
     // let today = moment({hour: 0}).add(1, 'hours').add(10, 'day').format('X');
 
     // let now = moment().format('X');
-    let yesterday = moment({hour: 0}).add(2, 'hours').subtract(1, 'day').format('X');
-    let today = moment({hour: 0}).add(2, 'hours').format('X');
+    // summertime - 2! wintertime-3?
+    let yesterday = moment({hour: 0}).add(3, 'hours').subtract(1, 'day').format('X');
+    let today = moment({hour: 0}).add(3, 'hours').format('X');
     this.tides = {
       extremes: [],
       timeStart: yesterday,

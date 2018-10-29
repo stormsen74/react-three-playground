@@ -13,7 +13,7 @@ class VTRecorder {
     this.timerData = {
       timeStep: 60,
       currentStep: 0,
-      recordLength: 6 * 60
+      recordLength: 4 * 60
     };
 
     this.vesselPool = [];
@@ -432,6 +432,18 @@ class VTRecorder {
     return filteredPool;
   }
 
+  getMovingVessels(vessels) {
+    let movingVessels = [];
+    for (let i = 0; i < vessels.length; i++) {
+      const hasMoved = vessels[i]['hasMoved'];
+      if (hasMoved) {
+        const vesselCopy = Object.assign({}, vessels[i]);
+        movingVessels.push(vesselCopy);
+      }
+    }
+    return movingVessels;
+  }
+
   getStaticVessels(vessels) {
     let staticVessels = [];
     for (let i = 0; i < vessels.length; i++) {
@@ -541,6 +553,7 @@ class VTRecorder {
 
     // const _vesselDataCopy = [...this.vesselPool];
     const _filteredVesselPool = this.filterVesselPool(this.vesselPool);
+    const _movingVessels = this.getMovingVessels(_filteredVesselPool);
     const _staticVessels = this.getStaticVessels(_filteredVesselPool);
     if (!asRawData) this.optimizePool(_filteredVesselPool);
 
@@ -555,7 +568,7 @@ class VTRecorder {
         staticVessels: _staticVessels
       },
       // vesselPool: this.vesselPool
-      vesselPool: _filteredVesselPool
+      vesselPool: _movingVessels
     };
 
     let now = new Date();

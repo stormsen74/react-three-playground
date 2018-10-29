@@ -13,8 +13,8 @@ import {Vector2} from "../../../utils/vector2";
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 
-const trackData = require("./trackData/10_26_16_49_l20_vesselData.json");
-const infoTrack = require("./trackData/10_26_16_49_l20_infoTrack.json");
+const trackData = require("./trackData/10_29_16_06_l240_vesselData.json");
+const infoTrack = require("./trackData/10_29_16_06_l240_infoTrack.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -42,7 +42,7 @@ class VTPlayer extends React.Component {
     this.playTimeline = this.playTimeline.bind(this);
     this.pauseTimeline = this.pauseTimeline.bind(this);
 
-    this.trackLength = 20;
+    this.trackLength = 240;
     console.log(infoTrack)
 
   }
@@ -349,30 +349,26 @@ class VTPlayer extends React.Component {
     let validCounter = 0;
     let range = {
       start: 0,
-      end: 60,
+      end: 200,
       _count: 0
     };
 
     // TODO => SAVE ONLY MOVED VESSELS TO POOL!
-    console.log(_data.vesselPool.length)
+    console.log('moving:', _data.vesselPool.length);
 
     for (let i = 0; i < _data.vesselPool.length; i++) {
 
-      let hasMoved = _data.vesselPool[i]['hasMoved'];
-
-      if (hasMoved) {
-        if (validCounter >= range.start) {
-          if (validCounter < range.end) {
-            this.optimizeTrackData(_data.vesselPool[i]);
-            this.initVessel(_data.vesselPool[i], validCounter);
-            range._count++;
-          }
+      if (validCounter >= range.start) {
+        if (validCounter < range.end) {
+          this.optimizeTrackData(_data.vesselPool[i]);
+          this.initVessel(_data.vesselPool[i], validCounter);
+          range._count++;
         }
-        validCounter++;
       }
+
+      validCounter++;
     }
 
-    console.log('valid vessels: ', validCounter);
   }
 
 
@@ -401,6 +397,7 @@ class VTPlayer extends React.Component {
 
   parseStaticData(_data) {
     const staticVessels = _data['meta']['staticVessels'];
+    console.log('static:', staticVessels.length);
     for (let i = 0; i < staticVessels.length; i++) {
       this.plotStaticVessel(staticVessels[i])
     }
