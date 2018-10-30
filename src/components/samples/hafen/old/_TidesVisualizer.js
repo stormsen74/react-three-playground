@@ -6,7 +6,7 @@ import 'react-dat-gui/build/react-dat-gui.css';
 import DatGui, {DatButton, DatNumber} from 'react-dat-gui';
 import * as PIXI from 'pixi.js'
 import CloseIcon from 'core/icons/close.inline.svg';
-import '../Scene.scss'
+import '../../Scene.scss'
 import {Vector2} from "../../../utils/vector2";
 import moment from 'moment';
 
@@ -24,7 +24,7 @@ class TidesVisualizer extends React.Component {
   state = {
     data: {
       package: 'react-dat-gui',
-      progress: .5,
+      progress: 0,
       showPath: true,
       showBounds: true,
       feelsLike: '#2FA1D6'
@@ -42,33 +42,45 @@ class TidesVisualizer extends React.Component {
     this.stopTides = this.stopTides.bind(this);
 
 
-    this.plot = {
+    // const data = [[0.0, 0.0], [1.5, 1.0], [2.4, 0.0]];
+    // const result = regression.polynomial(data, {order: 2, precision: 3});
+    // console.log(result)
+
+
+    this.plotSize = {
       width: 1500,
-      height: 600,
-      stepX: 0
+      height: 600
     };
 
-
+    // ——————————————————————————————————————————————————
+    // TRY THIS!
+    // ——————————————————————————————————————————————————
     // https://www.pegelonline.wsv.de/webservice/ueberblick
-    // https://www.pegelonline.wsv.de/webservices/zeitreihe/visualisierung?pegelnummer=5952050
 
-    let today = moment({hour: 0}).format();
-    today = moment(today).subtract(1, 'day'); // yesterday is valid [https://www.pegelonline.wsv.de/webservice/dokuAkt]
-    let timeStart = moment(today).subtract(0, 'hours').utc(false).format();
-    let timeEnd = moment(today).add(1, 'day').utc(false).add(2, 'hours').format();
 
+    this.vstart = new Vector2(0, this.plotSize.height * .5);
+
+    // let yesterday = moment({hour: 0}).add(1, 'hours').add(10, 'day').subtract(1, 'day').format('X');
+    // let today = moment({hour: 0}).add(1, 'hours').add(10, 'day').format('X');
+
+    // let now = moment().format('X');
+    // summertime - 2! wintertime-3?
+    let yesterday = moment({hour: 0}).add(3, 'hours').subtract(1, 'day').format('X');
+    let today = moment({hour: 0}).add(3, 'hours').format('X');
     this.tides = {
       extremes: [],
-      timeStart: timeStart,
-      timeEnd: timeEnd,
+      timeStart: yesterday,
+      timeRange: 3 * 24 * 3600,
+      timeStartDay: parseInt(today),
+      timeEndDay: parseInt(today) + (24 * 3600),
       range: []
     };
-    console.log(this.tides)
+    // [previousDay][currentDay][nextDay]
 
-    this.vstart = new Vector2(0, this.plot.height * .5);
     this.previousPlotPosition = new Vector2();
     this.time = {t: 0}
 
+    console.log(this.tides);
 
   }
 
@@ -82,8 +94,8 @@ class TidesVisualizer extends React.Component {
 
   initStage() {
     this.app = new PIXI.Application({
-        width: this.plot.width + 100,
-        height: this.plot.height,
+        width: this.plotSize.width + 100,
+        height: this.plotSize.height,
         antialias: true,    // default: false
         transparent: false, // default: false
         resolution: 1       // default: 1
@@ -112,8 +124,8 @@ class TidesVisualizer extends React.Component {
     this.gridLayer.addChild(this.timeDisplay);
 
     this.levelDisplay = new PIXI.Text('0 m', {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
-    this.levelDisplay.x = 1500 - 30;
-    this.levelDisplay.y = this.vstart.y + 110;
+    this.levelDisplay.x = 1500 - 50;
+    this.levelDisplay.y = this.vstart.y + 30;
     this.gridLayer.addChild(this.levelDisplay);
 
     this.pointer = new PIXI.Graphics();
@@ -130,9 +142,28 @@ class TidesVisualizer extends React.Component {
   }
 
   getTides(_this) {
+    let responseData =
+      {
+        "status": 200,
+        "callCount": 1,
+        "copyright": "Tidal data retrieved from www.worldtide.info. Copyright (c) 2014-2017 Brainware LLC. Licensed for use of individual spatial coordinates on behalf of\/by an end-user. Copyright (c) 2010-2016 Oregon State University. Licensed for individual spatial coordinates via ModEM-Geophysics Inc. NO GUARANTEES ARE MADE ABOUT THE CORRECTNESS OF THIS DATA. You may not use it if anyone or anything could come to harm as a result of using it (e.g. for navigational purposes).",
+        "requestLat": 53.544382,
+        "requestLon": 9.966491,
+        "responseLat": 53.8333,
+        "responseLon": 9,
+        "atlas": "TPXO_8_v1",
+        "extremes": [{"dt": 1540426093, "date": "2018-10-25T00:08+0000", "height": 2.303, "type": "High"}, {"dt": 1540451529, "date": "2018-10-25T07:12+0000", "height": -2.171, "type": "Low"}, {"dt": 1540470341, "date": "2018-10-25T12:25+0000", "height": 2.578, "type": "High"}, {"dt": 1540496115, "date": "2018-10-25T19:35+0000", "height": -2.347, "type": "Low"}, {"dt": 1540514743, "date": "2018-10-26T00:45+0000", "height": 2.55, "type": "High"}, {"dt": 1540540365, "date": "2018-10-26T07:52+0000", "height": -2.338, "type": "Low"}, {"dt": 1540559064, "date": "2018-10-26T13:04+0000", "height": 2.771, "type": "High"}, {"dt": 1540584928, "date": "2018-10-26T20:15+0000", "height": -2.423, "type": "Low"}, {"dt": 1540603449, "date": "2018-10-27T01:24+0000", "height": 2.726, "type": "High"}, {"dt": 1540629224, "date": "2018-10-27T08:33+0000", "height": -2.424, "type": "Low"}, {"dt": 1540647860, "date": "2018-10-27T13:44+0000", "height": 2.869, "type": "High"}, {
+          "dt": 1540673787,
+          "date": "2018-10-27T20:56+0000",
+          "height": -2.408,
+          "type": "Low"
+        }]
+      }
+    _this.initCurve(responseData);
+    return
 
-    // const url = 'https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/HAMBURG ST. PAULI/W/measurements.json?start=2018-10-28T23:00&end=2018-10-30T01:00';
-    const url = 'https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/HAMBURG ST. PAULI/W/measurements.json?start=' + _this.tides.timeStart + '&end=' + _this.tides.timeEnd;
+    // 3 credits per request
+    const url = 'https://www.worldtides.info/api?extremes&lat=53.544382&lon=9.966491&start=' + _this.tides.timeStart + '&length=259200&key=39457c2e-7d8d-43e1-af1c-655ac83991d3';
     axios.get(url, {
       responseType: 'json',
       headers: {
@@ -140,6 +171,7 @@ class TidesVisualizer extends React.Component {
         // 'Authorization': 'f780dfde-e181-4c1d-a246-fe9fbd80274c'
       },
     }).then(function (response) {
+      console.log(response.data);
       _this.initCurve(response.data);
     }).catch(function (error) {
       // handle error
@@ -150,13 +182,12 @@ class TidesVisualizer extends React.Component {
   }
 
   initCurve(data) {
+    this.tides.extremes = data.extremes;
 
     this.ctrlPoints = [];
-    this.plot.stepX = 1500 / data.length;
-    for (let i = 0; i < data.length; i += 30) {
-      // console.log(i / 60);
-      let x = this.vstart.x - (this.plot.stepX * 60) + (this.plot.stepX * i);
-      let y = this.vstart.y + 400 - (data[i].value);
+    for (let i = 0; i < this.tides.extremes.length; i++) {
+      let x = this.vstart.x + ((this.tides.extremes[i].dt - this.tides.timeStart) / this.tides.timeRange) * this.plotSize.width;
+      let y = this.vstart.y + (this.tides.extremes[i].height * 50);
       this.ctrlPoints.push([x, y]);
     }
 
@@ -169,13 +200,13 @@ class TidesVisualizer extends React.Component {
   }
 
   plotGrid() {
-    const rangeWidth = 1500 - (this.plot.stepX * 120);
-    const rangeQuarter = rangeWidth / 4;
-    VTPlayerUtils.plotLine(this.gridLayer, this.vstart, new Vector2(this.vstart.x + this.plot.width, this.vstart.y), 0xccccff, 1)
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + rangeWidth, 0), new Vector2(rangeWidth, this.vstart.y + 600), 0xccccff, 1);
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + rangeQuarter, 0), new Vector2(this.vstart.x + rangeQuarter, this.vstart.y + 600), 0x00ff00, .5);
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + rangeQuarter * 2, 0), new Vector2(this.vstart.x + rangeQuarter * 2, this.vstart.y + 600), 0x00ff00, .5);
-    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + rangeQuarter * 3, 0), new Vector2(this.vstart.x + rangeQuarter * 3, this.vstart.y + 600), 0x00ff00, .5)
+    VTPlayerUtils.plotLine(this.gridLayer, this.vstart, new Vector2(this.vstart.x + this.plotSize, this.vstart.y), 0xccccff, 1)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500, 0), new Vector2(this.vstart.x + 500, this.vstart.y + 600), 0xccccff, 1)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 125, 0), new Vector2(this.vstart.x + 500 + 125, this.vstart.y + 600), 0x00ff00, .5)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 250, 0), new Vector2(this.vstart.x + 500 + 250, this.vstart.y + 600), 0x00ff00, .5)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 500 + 375, 0), new Vector2(this.vstart.x + 500 + 375, this.vstart.y + 600), 0x00ff00, .5)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x + 1000, 0), new Vector2(this.vstart.x + 1000, this.vstart.y + 600), 0xccccff, 1)
+    VTPlayerUtils.plotLine(this.gridLayer, new Vector2(this.vstart.x, this.vstart.y), new Vector2(this.vstart.x + 1500, this.vstart.y), 0x36ceed, .5)
   }
 
   renderSpline() {
@@ -186,6 +217,8 @@ class TidesVisualizer extends React.Component {
       if (previousPosition.length() > 0) {
         const currentPosition = new Vector2(splinePoint[0], splinePoint[1]);
         VTPlayerUtils.plotLine(this.gfx, previousPosition, currentPosition, 0xffffff, 1);
+        const tangent = Vector2.subtract(currentPosition, previousPosition).normalize();
+        // console.log(Vector2.getAngleDEG(tangent))
       }
       previousPosition = new Vector2(splinePoint[0], splinePoint[1]);
       t += .01;
@@ -207,8 +240,8 @@ class TidesVisualizer extends React.Component {
       t += .001;
       progress = t * (this.ctrlPoints.length - 3);
       pos = this.spline.evaluate(progress);
-      if (Math.floor(pos[0]) == 0) range[0] = progress;
-      if (Math.floor(pos[0]) == Math.round(1500 - (this.plot.stepX * 120))) range[1] = progress;
+      if (Math.floor(pos[0]) == 500) range[0] = progress;
+      if (Math.floor(pos[0]) == 1000) range[1] = progress;
     }
     return range;
   }
@@ -265,18 +298,18 @@ class TidesVisualizer extends React.Component {
     this.pointer.y = currentPosition.y;
 
     if (this.waterLayer.children.length > 0) this.waterLayer.removeChildAt(0);
-    const waterLevel = (this.vstart.y + 400 - this.pointer.y) / 100;
+    const waterLevel = 2.5 - (.9 * (this.pointer.y - this.vstart.y) / 50);
     this.levelDisplay.text = waterLevel.toFixed(2) + ' m';
     let level = new PIXI.Graphics();
     level.beginFill(0x3578ea);
     level.drawRect(0, 0, 50, -waterLevel * 50);
     level.endFill();
-    level.x = 1500 - 30;
-    level.y = this.vstart.y + 100;
+    level.x = 1500 - 50;
+    level.y = this.vstart.y;
     this.waterLayer.addChild(level);
 
 
-    const time = Math.round(mathUtils.convertToRange(value, [0, 1], [0, 24 * 60 * 60]));
+    const time = Math.round(mathUtils.convertToRange(value, [0, 1], [this.tides.timeStartDay, this.tides.timeEndDay])) - this.tides.timeStartDay;
     const minutes = time / 60;
     const hours = Math.floor(time / 3600);
     this.timeDisplay.text = hours + ' : ' + Math.round(minutes % 60);
