@@ -59,13 +59,14 @@ class TidesVisualizer extends React.Component {
 
     this.tides = {
       extremes: [],
+      date:today,
       timeStart: timeStart,
       timeEnd: timeEnd,
       range: []
     };
     console.log(this.tides)
 
-    this.vstart = new Vector2(0, this.plot.height * .5);
+    this.vstart = new Vector2(0, this.plot.height * .75);
     this.previousPlotPosition = new Vector2();
     this.time = {t: 0}
 
@@ -105,6 +106,11 @@ class TidesVisualizer extends React.Component {
     this.app.stage.addChild(this.pointerLayer);
     this.app.stage.addChild(this.waterLayer);
     this.app.stage.addChild(this.flowLayer);
+
+    this.dateDisplay = new PIXI.Text(this.tides.date, {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
+    this.dateDisplay.x = 10;
+    this.dateDisplay.y = 550;
+    this.gridLayer.addChild(this.dateDisplay);
 
     this.timeDisplay = new PIXI.Text('0', {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
     this.timeDisplay.x = 510;

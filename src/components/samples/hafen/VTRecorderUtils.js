@@ -1,5 +1,4 @@
 import {Vector2} from "../../../utils/vector2";
-import VTPlayerUtils from "./utils/VTPlayerUtils";
 
 const VTRecorderUtils = {};
 

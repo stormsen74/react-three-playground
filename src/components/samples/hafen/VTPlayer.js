@@ -349,7 +349,7 @@ class VTPlayer extends React.Component {
     let validCounter = 0;
     let range = {
       start: 0,
-      end: 200,
+      end: 100,
       _count: 0
     };
 

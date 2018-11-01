@@ -106,6 +106,10 @@ class VTRecorder {
     return lat < VTRecorderUtils.mapRange.minLat && lat > VTRecorderUtils.mapRange.maxLat && lon > VTRecorderUtils.mapRange.minLong && lon < VTRecorderUtils.mapRange.maxLong;
   }
 
+  getRotation(aisPosition) {
+    return aisPosition['hdg'] !== 511 ? aisPosition['hdg'] : aisPosition['cog']
+  }
+
   // ——————————————————————————————————————————————————
   // vesselPool / handling
   // ——————————————————————————————————————————————————
@@ -114,6 +118,7 @@ class VTRecorder {
     return {
       mmsi: vesselData['aisStatic']['mmsi'],
       status: vesselData['geoDetails']['status'],
+      // hasValidRotation: this.getRotation(vesselData['aisPosition']) !== 360 ? true : false,
       valid: true,
       inMapRange: this.inMapRange(this.getFixed(vesselData['aisPosition']['lat']), this.getFixed(vesselData['aisPosition']['lon'])),
       passedMapRange: this.inMapRange(this.getFixed(vesselData['aisPosition']['lat']), this.getFixed(vesselData['aisPosition']['lon'])),
@@ -138,6 +143,8 @@ class VTRecorder {
           status: vesselData['geoDetails']['status'],
           lat: this.getFixed(vesselData['aisPosition']['lat']),
           lon: this.getFixed(vesselData['aisPosition']['lon']),
+          // TODO ...
+          rot: this.getRotation(vesselData['aisPosition']),
           sog: vesselData['aisPosition']['sog'],
           cog: vesselData['aisPosition']['cog'],
           hdg: vesselData['aisPosition']['hdg']
@@ -177,6 +184,7 @@ class VTRecorder {
 
       if (result[0]) {
         vesselPool[i]['status'] = result[0]['geoDetails']['status'];
+        // if (!vesselPool[i]['hasValidRotation'] && this.getRotation(result[0]['aisPosition']) !== 360) vesselPool[i]['hasValidRotation'] = true;
         vesselPool[i]['aisPosition']['lat'] = this.getFixed(result[0]['aisPosition']['lat']);
         vesselPool[i]['aisPosition']['lon'] = this.getFixed(result[0]['aisPosition']['lon']);
         vesselPool[i]['aisPosition']['sog'] = result[0]['aisPosition']['sog'];
@@ -188,11 +196,15 @@ class VTRecorder {
             status: result[0]['geoDetails']['status'],
             lat: this.getFixed(result[0]['aisPosition']['lat']),
             lon: this.getFixed(result[0]['aisPosition']['lon']),
+            rot: this.getRotation(result[0]['aisPosition']),
             sog: result[0]['aisPosition']['sog'],
             cog: result[0]['aisPosition']['cog'],
             hdg: result[0]['aisPosition']['hdg']
           }
         );
+
+        // TODO check for rot = 0
+        // console.log('>',this.getRotation(result[0]['aisPosition']))
 
         // if movement < (.00002) => set status 'moored' => fill position with last position
         // maybe check for ['sog']?!
@@ -208,11 +220,36 @@ class VTRecorder {
                 status: 'static',
                 lat: lastTrackData['lat'],
                 lon: lastTrackData['lon'],
+                rot: lastTrackData['rot'],
                 sog: result[0]['aisPosition']['sog'],
                 cog: result[0]['aisPosition']['cog'],
                 hdg: result[0]['aisPosition']['hdg']
               }
           }
+        }
+
+        if (vesselPool[i]['trackData'].length > 1) {
+          const pathArrayLength = vesselPool[i]['trackData'].length;
+          if (vesselPool[i]['trackData'][pathArrayLength - 2]['rot'] === 360 && vesselPool[i]['trackData'][pathArrayLength - 1]['rot'] !== 360) {
+            console.log('rot was invalid - now valid', vesselPool[i]['trackData']);
+            const validRotation = vesselPool[i]['trackData'][pathArrayLength - 1]['rot'];
+            console.log('valid rotation: ', validRotation)
+            for (let j = pathArrayLength - 2; j > 0; j--) {
+              console.log(vesselPool[i]['trackData'][j]['rot']);
+              if (vesselPool[i]['trackData'][j]['rot'] === 360) {
+                vesselPool[i]['trackData'][j]['rot'] = validRotation
+              } else {
+                break
+              }
+            }
+            console.log('after fill: ', vesselPool[i]['trackData'])
+          }
+
+
+          if (vesselPool[i]['trackData'][pathArrayLength - 2]['rot'] !== 360 && vesselPool[i]['trackData'][pathArrayLength - 1]['rot'] === 360) {
+            console.log('rot was valid - now invalid', vesselPool[i])
+          }
+
         }
 
         // check => in mapRange
@@ -303,6 +340,8 @@ class VTRecorder {
 
 
     this.updatePool(this.vesselPool, data);
+
+    // console.log(this.getUnvalidRotatedVessels(this.vesselPool))
 
     this.timerData.currentStep++;
     this.mapReferenz.onUpdateTrackerData(this.filterVesselPool(this.vesselPool), this.vesselPool.length, this.infoTrack);
@@ -455,6 +494,18 @@ class VTRecorder {
       }
     }
     return staticVessels;
+  }
+
+  getUnvalidRotatedVessels(vessels) {
+    let unvalidVessels = [];
+    for (let i = 0; i < vessels.length; i++) {
+      const hasValidRotation = vessels[i]['hasValidRotation'];
+      if (!hasValidRotation) {
+        const vesselCopy = Object.assign({}, vessels[i]);
+        unvalidVessels.push(vesselCopy);
+      }
+    }
+    return unvalidVessels;
   }
 
   optimizePool(vesselPool) {
