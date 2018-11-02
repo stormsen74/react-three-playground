@@ -13,8 +13,8 @@ import {Vector2} from "../../../utils/vector2";
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 
-const trackData = require("./trackData/10_29_16_06_l240_vesselData.json");
-const infoTrack = require("./trackData/10_29_16_06_l240_infoTrack.json");
+const trackData = require("./trackData/11_02_16_31_l240_vesselData.json");
+const infoTrack = require("./trackData/11_02_16_31_l240_infoTrack.json");
 
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -268,52 +268,6 @@ class VTPlayer extends React.Component {
     return Vector2.getDistance(v1, v2);
   }
 
-  getRotation(aisPosition) {
-    return aisPosition['hdg'] !== 511 ? aisPosition['hdg'] : aisPosition['cog']
-  }
-
-  correctRotationTrackData(_vesselData) {
-
-    console.log('=== start parse ===', _vesselData['trackData'])
-
-    let startIndex, endIndex = 0;
-    // let endIndex = 0;
-    let isSet = false;
-    let valid = 0;
-
-    for (let i = 0; i < _vesselData['trackData'].length - 1; i++) {
-
-      const currentTrackPoint = _vesselData['trackData'][i];
-      const currentRotation = this.getRotation(currentTrackPoint);
-      const nextTrackPoint = _vesselData['trackData'][i + 1];
-      const nextRotation = this.getRotation(nextTrackPoint);
-
-      // if (currentRotation != 0) valid = currentRotation;
-
-
-      if (currentRotation === 0 && nextRotation === 0 && !isSet) {
-        isSet = true;
-        startIndex = i;
-        console.log('startIndex', startIndex)
-      }
-
-      if (currentRotation === 0 && nextRotation !== 0 && isSet) {
-        endIndex = i;
-
-        for (let j = startIndex; j < endIndex + 1; j++) {
-          _vesselData['trackData'][j]['cog'] = nextRotation;
-        }
-
-        isSet = false;
-        console.log('zeros:', startIndex, endIndex)
-      }
-
-
-    }
-    console.log('=== end parse ===')
-  }
-
-
   optimizeTrackData(_vesselData) {
     // console.log('optimize', _vesselData['mmsi'])
 
@@ -394,17 +348,11 @@ class VTPlayer extends React.Component {
     let validCounter = 0;
     let range = {
       start: 0,
-      end: 100,
+      end: 200,
       _count: 0
     };
 
-    // TODO => SAVE ONLY MOVED VESSELS TO POOL!
     console.log('moving:', _data.vesselPool.length);
-
-
-    for (let i = 0; i < 10; i++) {
-      this.correctRotationTrackData(_data.vesselPool[i]);
-    }
 
     for (let i = 0; i < _data.vesselPool.length; i++) {
 
