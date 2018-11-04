@@ -8,14 +8,13 @@ import * as PIXI from 'pixi.js'
 import CloseIcon from 'core/icons/close.inline.svg';
 import '../Scene.scss'
 import {Vector2} from "../../../utils/vector2";
+import Mousetrap from 'mousetrap';
 
 
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 
-const trackData = require("./trackData/11_02_16_31_l240_vesselData.json");
-const infoTrack = require("./trackData/11_02_16_31_l240_infoTrack.json");
-
+const trackData = require("./trackData/11_03_14_29_l10_vesselData.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -42,9 +41,33 @@ class VTPlayer extends React.Component {
     this.playTimeline = this.playTimeline.bind(this);
     this.pauseTimeline = this.pauseTimeline.bind(this);
 
-    this.trackLength = 240;
-    console.log(infoTrack)
+    this.stepForward = this.stepForward.bind(this);
+    this.stepBack = this.stepBack.bind(this);
 
+    Mousetrap.bind('right', this.stepForward);
+    Mousetrap.bind('left', this.stepBack);
+
+    this.currentFrame = 0;
+    this.trackLength = trackData.meta.timeRange;
+    this.infoTrack = trackData.meta.infoTrack;
+
+    this.timeStep = 1 / trackData.meta.timeRange;
+  }
+
+  stepForward() {
+    if (this.vesselTimeline.progress() < 1) {
+      this.vesselTimeline.progress(this.vesselTimeline.progress() + this.timeStep);
+      this.currentFrame = Math.round(this.vesselTimeline.progress() * this.trackLength);
+      console.log(this.currentFrame);
+    }
+  }
+
+  stepBack() {
+    if (this.vesselTimeline.progress() > 0) {
+      this.vesselTimeline.progress(this.vesselTimeline.progress() - this.timeStep);
+      this.currentFrame = Math.round(this.vesselTimeline.progress() * this.trackLength);
+      console.log(this.currentFrame);
+    }
   }
 
   componentDidMount() {
@@ -187,7 +210,6 @@ class VTPlayer extends React.Component {
     this.show();
   }
 
-
   show() {
     TweenMax.to(this.canvasWrapper, .5, {delay: .25, opacity: 1, ease: Cubic.easeIn});
   }
@@ -236,7 +258,7 @@ class VTPlayer extends React.Component {
     this.statsLinesLayer.removeChildren(0, this.statsLinesLayer.children.length);
 
     for (let i = 0; i < VTPlayerUtils.vesselTypes.length; i++) {
-      const count = infoTrack[frame]['vesselTypes'][i];
+      const count = this.infoTrack[frame]['vesselTypes'][i];
       VTPlayerUtils.plotLine(this.statsLinesLayer, new Vector2(120, i * 15), new Vector2(120 + count * 2, i * 15), this.getColorByType(VTPlayerUtils.vesselTypes[i]), 5)
     }
   }
@@ -244,8 +266,8 @@ class VTPlayer extends React.Component {
   initTimeline() {
     this.vesselTimeline = new TimelineMax({
       onUpdate: () => {
-        const currentFrame = Math.round(this.vesselTimeline.progress() * (this.trackLength - 1));
-        this.getInfoFrame(currentFrame);
+        this.currentFrame = Math.round(this.state.data.progress * (this.trackLength - 1));
+        this.getInfoFrame(this.currentFrame);
         this.setState({
           data: {
             ...this.state.data,
@@ -259,8 +281,9 @@ class VTPlayer extends React.Component {
       onCompleteScope: this,
       paused: true
     });
-  }
 
+
+  }
 
   getDistance(trackPoint_1, trackPoint_2) {
     const v1 = new Vector2(trackPoint_1['lat'], trackPoint_1['lon']);
@@ -347,8 +370,9 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 0,
-      end: 200,
+      start: 1,
+      end: trackData.meta.numMovingVessels,
+      // end: 2,
       _count: 0
     };
 
@@ -367,8 +391,9 @@ class VTPlayer extends React.Component {
       validCounter++;
     }
 
-  }
+    this.vesselTimeline.progress(0.001);
 
+  }
 
   plotStaticVessel(_vesselData) {
     let vessel = new PIXI.Container();
@@ -401,18 +426,25 @@ class VTPlayer extends React.Component {
     }
   }
 
-
   initVessel(_vesselData, _count) {
 
     let vessel = new PIXI.Container();
-    let vesselGraphics = new PIXI.Graphics();
+
     const vesselType = _vesselData['aisStatic']['type'];
     const vesselColor = this.getColorByType(vesselType);
     // if (_vesselData['mmsi'] == 211437270) vesselColor = 0xf3d611;
+
+    let vesselGraphics = new PIXI.Graphics();
     vesselGraphics.beginFill(vesselColor);
-    vesselGraphics.drawCircle(0, 0, 3);
+    vesselGraphics.drawCircle(0, 0, 4);
     vesselGraphics.endFill();
     vessel.addChild(vesselGraphics);
+
+    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xf3b611, 4);
+    VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0xff0000, 1);
+    VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0x00ff00, 1);
+    VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -15), 0x0000ff, 1);
+
     this.vesselLayer.addChild(vessel);
 
     vessel.data = _vesselData;
@@ -454,6 +486,25 @@ class VTPlayer extends React.Component {
         type: 'thru',
         values: parsedTrack,
         autoRotate: false
+      },
+      onUpdateParams: [vessel],
+      onUpdate: (p) => {
+        if (this.currentFrame < trackData.meta.timeRange - 1) {
+          const data = p.data.trackData[this.currentFrame];
+          console.log(data.status);
+          // console.log(p.children)
+          // const d0 = p.data.trackData[this.currentFrame + 1];
+          // const d1 = p.data.trackData[this.currentFrame + 1];
+          // const p1 = VTPlayerUtils.getVectorFromGeoPoint(d0.lat, d0.lon);
+          // const p2 = VTPlayerUtils.getVectorFromGeoPoint(d1.lat, d1.lon);
+          // const dir = Vector2.subtract(p2, p1);
+          // const rad = Vector2.getAngleRAD(dir);
+          // p.rotation = rad;
+          p.children[1].visible = data.status == 'static' ? true : false;
+          p.children[2].rotation = data.cog * 0.0174533;
+          p.children[3].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
+          p.children[4].rotation = data.rot * 0.0174533;
+        }
       },
       ease: Power0.easeNone
     });
@@ -522,8 +573,8 @@ class VTPlayer extends React.Component {
   }
 
   updateData(data) {
-    this.vesselTimeline.progress(data.progress);
     this.setState({data})
+    this.vesselTimeline.progress(data.progress);
   }
 
   render() {

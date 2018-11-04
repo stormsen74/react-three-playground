@@ -13,7 +13,7 @@ class VTRecorder {
     this.timerData = {
       timeStep: 60,
       currentStep: 0,
-      recordLength: 60
+      recordLength: 10
     };
 
     this.vesselPool = [];
@@ -652,8 +652,11 @@ class VTRecorder {
 
     for (let i = 0; i < _vesselData['trackData'].length; i++) {
       vessel['trackData'][i] = {
+        status: _vesselData['trackData'][i]['status'],
         lat: _vesselData['trackData'][i]['lat'],
         lon: _vesselData['trackData'][i]['lon'],
+        cog: _vesselData['trackData'][i]['cog'],
+        hdg: _vesselData['trackData'][i]['hdg'],
         rot: _vesselData['trackData'][i]['rot'],
       }
     }
