@@ -14,7 +14,7 @@ import Mousetrap from 'mousetrap';
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 
-const trackData = require("./trackData/11_03_14_29_l10_vesselData.json");
+const trackData = require("./trackData/11_05_18_12_l10_vesselData.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -48,25 +48,35 @@ class VTPlayer extends React.Component {
     Mousetrap.bind('left', this.stepBack);
 
     this.currentFrame = 0;
-    this.trackLength = trackData.meta.timeRange;
+    this.trackLength = trackData.meta.timeRange - 1;
     this.infoTrack = trackData.meta.infoTrack;
 
-    this.timeStep = 1 / trackData.meta.timeRange;
+    this.timeStep = 1 / (trackData.meta.timeRange);
   }
 
   stepForward() {
     if (this.vesselTimeline.progress() < 1) {
       this.vesselTimeline.progress(this.vesselTimeline.progress() + this.timeStep);
       this.currentFrame = Math.round(this.vesselTimeline.progress() * this.trackLength);
-      console.log(this.currentFrame);
+      this.updateDebug();
     }
   }
 
   stepBack() {
-    if (this.vesselTimeline.progress() > 0) {
+    if (this.vesselTimeline.progress() >= this.timeStep) {
       this.vesselTimeline.progress(this.vesselTimeline.progress() - this.timeStep);
       this.currentFrame = Math.round(this.vesselTimeline.progress() * this.trackLength);
-      console.log(this.currentFrame);
+      this.updateDebug();
+    }
+  }
+
+  updateDebug() {
+    for (let i = 0; i < this.vesselLayer.children.length; i++) {
+      const data = this.vesselLayer.children[i].data.trackData[this.currentFrame];
+      this.vesselLayer.children[i].children[1].visible = data.status == 'static' ? true : false;
+      this.vesselLayer.children[i].children[2].rotation = data.cog * 0.0174533;
+      this.vesselLayer.children[i].children[3].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
+      this.vesselLayer.children[i].children[4].rotation = data.rot * 0.0174533;
     }
   }
 
@@ -266,7 +276,8 @@ class VTPlayer extends React.Component {
   initTimeline() {
     this.vesselTimeline = new TimelineMax({
       onUpdate: () => {
-        this.currentFrame = Math.round(this.state.data.progress * (this.trackLength - 1));
+        this.currentFrame = Math.round(this.state.data.progress * this.trackLength);
+        this.updateDebug();
         this.getInfoFrame(this.currentFrame);
         this.setState({
           data: {
@@ -283,6 +294,24 @@ class VTPlayer extends React.Component {
     });
 
 
+  }
+
+  // ——————————————————————————————————————————————————
+  // test optimize ...
+  // ——————————————————————————————————————————————————
+
+  getRotation(aisPosition) {
+    let rotation = 0;
+    if (aisPosition['hdg'] !== 511) {
+      rotation = aisPosition['hdg']
+    } else {
+      if (aisPosition['cog'] === 0 || aisPosition['cog'] === 360) {
+        rotation = 0;
+      } else {
+        rotation = aisPosition['cog'];
+      }
+    }
+    return rotation
   }
 
   getDistance(trackPoint_1, trackPoint_2) {
@@ -367,10 +396,67 @@ class VTPlayer extends React.Component {
     }
   }
 
+  correctRotationTrackData(_vesselData) {
+
+    console.log('=== start parse ===', _vesselData['mmsi'], _vesselData['trackData'])
+
+    let startIndex = 0;
+    let endIndex = 0;
+    let setAtStart = false;
+    let lastValidRotation = 0;
+
+    for (let i = 0; i < _vesselData['trackData'].length; i++) {
+
+      // const currentTrackPoint = _vesselData['trackData'][i];
+      // const currentRotation = this.getRotation(currentTrackPoint);
+      // _vesselData['trackData'][i]['rot'] = currentRotation;
+
+      const currentTrackPoint = _vesselData['trackData'][i];
+      const currentRotation = this.getRotation(currentTrackPoint);
+      // const nextTrackPoint = (i < _vesselData['trackData'].length - 1) ? _vesselData['trackData'][i + 1] : null;
+      // const nextRotation = nextTrackPoint != null ? this.getRotation(nextTrackPoint) : null;
+      //
+      if (currentRotation !== 0) {
+        lastValidRotation = currentRotation;
+      }
+        _vesselData['trackData'][i]['rot'] = lastValidRotation;
+      //
+      // if (nextRotation != null) {
+      //
+      //   // if rotation at start == zero => fill with next valid value
+      //   if (currentRotation === 0 && nextRotation === 0 && !setAtStart && i === 0) {
+      //     setAtStart = true;
+      //     startIndex = i;
+      //   }
+      //
+      //   if (nextRotation !== 0 && setAtStart) {
+      //     endIndex = i;
+      //     for (let j = startIndex; j < endIndex + 1; j++) {
+      //       _vesselData['trackData'][j]['rot'] = nextRotation;
+      //     }
+      //     setAtStart = false;
+      //   }
+      //
+      //   // if next zero => replace with latest valid
+      //   if (nextRotation === 0) _vesselData['trackData'][i + 1]['rot'] = lastValidRotation;
+      //
+      // } else {
+      //
+      //   if (currentRotation === 0) {
+      //     _vesselData['trackData'][i]['rot'] = 0;
+      //   }
+      //
+      // }
+
+
+    }
+
+  }
+
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 1,
+      start: 0,
       end: trackData.meta.numMovingVessels,
       // end: 2,
       _count: 0
@@ -383,6 +469,8 @@ class VTPlayer extends React.Component {
       if (validCounter >= range.start) {
         if (validCounter < range.end) {
           this.optimizeTrackData(_data.vesselPool[i]);
+          // TODO ..
+          this.correctRotationTrackData(_data.vesselPool[i]);
           this.initVessel(_data.vesselPool[i], validCounter);
           range._count++;
         }
@@ -391,7 +479,7 @@ class VTPlayer extends React.Component {
       validCounter++;
     }
 
-    this.vesselTimeline.progress(0.001);
+    this.updateDebug();
 
   }
 
@@ -486,25 +574,6 @@ class VTPlayer extends React.Component {
         type: 'thru',
         values: parsedTrack,
         autoRotate: false
-      },
-      onUpdateParams: [vessel],
-      onUpdate: (p) => {
-        if (this.currentFrame < trackData.meta.timeRange - 1) {
-          const data = p.data.trackData[this.currentFrame];
-          console.log(data.status);
-          // console.log(p.children)
-          // const d0 = p.data.trackData[this.currentFrame + 1];
-          // const d1 = p.data.trackData[this.currentFrame + 1];
-          // const p1 = VTPlayerUtils.getVectorFromGeoPoint(d0.lat, d0.lon);
-          // const p2 = VTPlayerUtils.getVectorFromGeoPoint(d1.lat, d1.lon);
-          // const dir = Vector2.subtract(p2, p1);
-          // const rad = Vector2.getAngleRAD(dir);
-          // p.rotation = rad;
-          p.children[1].visible = data.status == 'static' ? true : false;
-          p.children[2].rotation = data.cog * 0.0174533;
-          p.children[3].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
-          p.children[4].rotation = data.rot * 0.0174533;
-        }
       },
       ease: Power0.easeNone
     });

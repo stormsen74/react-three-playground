@@ -212,18 +212,19 @@ class VTRecorder {
         if (vesselPool[i]['trackData'].length >= 1) {
           const pathArrayLength = vesselPool[i]['trackData'].length;
           const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
-          if (traveledDistance < .00005 || result[0]['aisPosition']['sog'] <= .3) {
+          // if (traveledDistance < .00005 && result[0]['aisPosition']['sog'] <= .3) {
+          if (traveledDistance < .00003) {
             vesselPool[i]['status'] = 'static';
-            let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
-            vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
-              {
-                status: 'static',
-                lat: lastTrackData['lat'],
-                lon: lastTrackData['lon'],
-                sog: result[0]['aisPosition']['sog'],
-                cog: result[0]['aisPosition']['cog'],
-                hdg: result[0]['aisPosition']['hdg']
-              }
+            // let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
+            // vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
+            //   {
+            //     status: 'static',
+            //     lat: lastTrackData['lat'],
+            //     lon: lastTrackData['lon'],
+            //     sog: result[0]['aisPosition']['sog'],
+            //     cog: result[0]['aisPosition']['cog'],
+            //     hdg: result[0]['aisPosition']['hdg']
+            //   }
           }
         }
 
@@ -488,7 +489,7 @@ class VTRecorder {
     for (let i = 0; i < vesselPool.length; i++) {
       const hasMoved = vesselPool[i]['hasMoved'];
       if (hasMoved) this.optimizeTrackData(vesselPool[i]);
-      this.correctRotationTrackData(vesselPool[i])
+      // this.correctRotationTrackData(vesselPool[i])
     }
   }
 
