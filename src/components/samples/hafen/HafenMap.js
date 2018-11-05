@@ -188,9 +188,7 @@ class HafenMap extends React.Component {
 
   plotVessel(vesselData, infoTrack) {
 
-    // initial => show all / next step only moving vessels ...
     if (this.vtc.timerData.currentStep > 0) {
-      // if (!vesselData.hasMoved) return;
       if (!vesselData.valid) return;
     }
 

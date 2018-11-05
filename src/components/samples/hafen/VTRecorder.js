@@ -13,7 +13,7 @@ class VTRecorder {
     this.timerData = {
       timeStep: 60,
       currentStep: 0,
-      recordLength: 10
+      recordLength: 120
     };
 
     this.vesselPool = [];
@@ -209,12 +209,12 @@ class VTRecorder {
         );
 
         // if movement < (.00003) => set status 'static' => fill position with last position
-        if (vesselPool[i]['trackData'].length >= 1) {
-          const pathArrayLength = vesselPool[i]['trackData'].length;
-          const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
+        // if (vesselPool[i]['trackData'].length >= 1) {
+        //   const pathArrayLength = vesselPool[i]['trackData'].length;
+        //   const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
           // if (traveledDistance < .00005 && result[0]['aisPosition']['sog'] <= .3) {
-          if (traveledDistance < .00003) {
-            vesselPool[i]['status'] = 'static';
+          // if (traveledDistance < .00003) {
+          //   vesselPool[i]['status'] = 'static';
             // let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
             // vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
             //   {
@@ -225,8 +225,8 @@ class VTRecorder {
             //     cog: result[0]['aisPosition']['cog'],
             //     hdg: result[0]['aisPosition']['hdg']
             //   }
-          }
-        }
+          // }
+        // }
 
         // check => in mapRange
         if (!vesselPool[i]['passedMapRange'] && this.inMapRange(vesselPool[i]['aisPosition']['lat'], vesselPool[i]['aisPosition']['lon'])) vesselPool[i]['passedMapRange'] = true;

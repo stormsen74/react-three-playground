@@ -24,6 +24,7 @@ class VTPlayer extends React.Component {
     data: {
       package: 'react-dat-gui',
       progress: 0,
+      frame: 0,
       showPath: true,
       showBounds: true,
       showStatic: true,
@@ -73,11 +74,20 @@ class VTPlayer extends React.Component {
   updateDebug() {
     for (let i = 0; i < this.vesselLayer.children.length; i++) {
       const data = this.vesselLayer.children[i].data.trackData[this.currentFrame];
-      this.vesselLayer.children[i].children[1].visible = data.status == 'static' ? true : false;
-      this.vesselLayer.children[i].children[2].rotation = data.cog * 0.0174533;
-      this.vesselLayer.children[i].children[3].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
-      this.vesselLayer.children[i].children[4].rotation = data.rot * 0.0174533;
+      this.vesselLayer.children[i].children[1].rotation = data.cog * 0.0174533;
+      this.vesselLayer.children[i].children[2].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
+      this.vesselLayer.children[i].children[3].rotation = data.rot * 0.0174533;
+      this.vesselLayer.children[i].children[4].visible = data.status == 'static' ? true : false;
+      this.vesselLayer.children[i].children[5].visible = data.status == 'moored' ? true : false;
+      this.vesselLayer.children[i].children[6].visible = data.status == 'waiting' ? true : false;
     }
+
+    this.setState({
+      data: {
+        ...this.state.data,
+        frame: this.currentFrame
+      }
+    })
   }
 
   componentDidMount() {
@@ -282,7 +292,8 @@ class VTPlayer extends React.Component {
         this.setState({
           data: {
             ...this.state.data,
-            progress: this.vesselTimeline.progress()
+            progress: this.vesselTimeline.progress(),
+            frame: this.currentFrame
           }
         })
       },
@@ -528,10 +539,12 @@ class VTPlayer extends React.Component {
     vesselGraphics.endFill();
     vessel.addChild(vesselGraphics);
 
-    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xf3b611, 4);
     VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0xff0000, 1);
     VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0x00ff00, 1);
     VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -15), 0x0000ff, 1);
+    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xf3b611, 4);
+    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xff0000, 4);
+    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0x0000ff, 4);
 
     this.vesselLayer.addChild(vessel);
 
@@ -659,6 +672,7 @@ class VTPlayer extends React.Component {
         <div className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}></div>
         <DatGui data={data} onUpdate={this.update}>
           <DatNumber path='progress' label='progress' min={0} max={1} step={0.01}/>
+          <DatNumber path='frame' label='frame'/>
           <DatButton label="Play" onClick={this.playTimeline}/>
           <DatButton label="Pause" onClick={this.pauseTimeline}/>
           <DatBoolean path='showPath' label='showPath'/>
