@@ -13,8 +13,9 @@ import Mousetrap from 'mousetrap';
 
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
+import saveAs from "file-saver";
 
-const trackData = require("./trackData/11_05_18_12_l10_vesselData.json");
+const trackData = require("./trackData/11_06_11_28_l120_vesselData.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -74,6 +75,8 @@ class VTPlayer extends React.Component {
   updateDebug() {
     for (let i = 0; i < this.vesselLayer.children.length; i++) {
       const data = this.vesselLayer.children[i].data.trackData[this.currentFrame];
+      this.vesselLayer.children[i].x = this.vesselLayer.children[i].parsedTrack[this.currentFrame].x;
+      this.vesselLayer.children[i].y = this.vesselLayer.children[i].parsedTrack[this.currentFrame].y;
       this.vesselLayer.children[i].children[1].rotation = data.cog * 0.0174533;
       this.vesselLayer.children[i].children[2].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
       this.vesselLayer.children[i].children[3].rotation = data.rot * 0.0174533;
@@ -317,7 +320,7 @@ class VTPlayer extends React.Component {
       rotation = aisPosition['hdg']
     } else {
       if (aisPosition['cog'] === 0 || aisPosition['cog'] === 360) {
-        rotation = 0;
+        rotation = 360;
       } else {
         rotation = aisPosition['cog'];
       }
@@ -411,53 +414,60 @@ class VTPlayer extends React.Component {
 
     console.log('=== start parse ===', _vesselData['mmsi'], _vesselData['trackData'])
 
-    let startIndex = 0;
-    let endIndex = 0;
+    let startReplace = 0;
+    let endReplace = 0;
     let setAtStart = false;
     let lastValidRotation = 0;
+    let _tempRotationBeforeMoored = 0;
 
     for (let i = 0; i < _vesselData['trackData'].length; i++) {
 
-      // const currentTrackPoint = _vesselData['trackData'][i];
-      // const currentRotation = this.getRotation(currentTrackPoint);
-      // _vesselData['trackData'][i]['rot'] = currentRotation;
-
       const currentTrackPoint = _vesselData['trackData'][i];
       const currentRotation = this.getRotation(currentTrackPoint);
-      // const nextTrackPoint = (i < _vesselData['trackData'].length - 1) ? _vesselData['trackData'][i + 1] : null;
-      // const nextRotation = nextTrackPoint != null ? this.getRotation(nextTrackPoint) : null;
-      //
-      if (currentRotation !== 0) {
+      const nextTrackPoint = (i < _vesselData['trackData'].length - 1) ? _vesselData['trackData'][i + 1] : null;
+      const nextRotation = nextTrackPoint != null ? this.getRotation(nextTrackPoint) : null;
+
+      if (currentRotation !== 360) {
         lastValidRotation = currentRotation;
       }
-        _vesselData['trackData'][i]['rot'] = lastValidRotation;
-      //
-      // if (nextRotation != null) {
-      //
-      //   // if rotation at start == zero => fill with next valid value
-      //   if (currentRotation === 0 && nextRotation === 0 && !setAtStart && i === 0) {
-      //     setAtStart = true;
-      //     startIndex = i;
-      //   }
-      //
-      //   if (nextRotation !== 0 && setAtStart) {
-      //     endIndex = i;
-      //     for (let j = startIndex; j < endIndex + 1; j++) {
-      //       _vesselData['trackData'][j]['rot'] = nextRotation;
-      //     }
-      //     setAtStart = false;
-      //   }
-      //
-      //   // if next zero => replace with latest valid
-      //   if (nextRotation === 0) _vesselData['trackData'][i + 1]['rot'] = lastValidRotation;
-      //
-      // } else {
-      //
-      //   if (currentRotation === 0) {
-      //     _vesselData['trackData'][i]['rot'] = 0;
-      //   }
-      //
-      // }
+      _vesselData['trackData'][i]['rot'] = lastValidRotation;
+
+
+      if (nextRotation != null) {
+
+        // if rotation at start == zero => fill with next valid value
+        if (currentRotation === 360 && nextRotation === 360 && !setAtStart && i === 0) {
+          setAtStart = true;
+          startReplace = i;
+        }
+
+        if (nextRotation !== 360 && setAtStart) {
+          endReplace = i;
+          for (let j = startReplace; j < endReplace + 1; j++) {
+            _vesselData['trackData'][j]['rot'] = nextRotation;
+          }
+          setAtStart = false;
+        }
+
+        // if next zero => replace with latest valid
+        if (nextRotation === 360) _vesselData['trackData'][i + 1]['rot'] = lastValidRotation;
+
+
+        if (currentTrackPoint['status'] !== 'moored' && nextTrackPoint['status'] === 'moored') {
+          _tempRotationBeforeMoored = currentRotation;
+        }
+
+        if (currentTrackPoint['status'] === 'moored' && nextTrackPoint['status'] === 'moored') {
+          if (_tempRotationBeforeMoored !== 0) _vesselData['trackData'][i]['rot'] = _tempRotationBeforeMoored;
+
+        }
+
+        if (currentTrackPoint['status'] === 'moored' && nextTrackPoint['status'] !== 'moored') {
+          _tempRotationBeforeMoored = 0;
+          _vesselData['trackData'][i]['rot'] = currentRotation;
+        }
+
+      }
 
 
     }
@@ -469,7 +479,7 @@ class VTPlayer extends React.Component {
     let range = {
       start: 0,
       end: trackData.meta.numMovingVessels,
-      // end: 2,
+      // end: 69,
       _count: 0
     };
 
@@ -480,7 +490,6 @@ class VTPlayer extends React.Component {
       if (validCounter >= range.start) {
         if (validCounter < range.end) {
           this.optimizeTrackData(_data.vesselPool[i]);
-          // TODO ..
           this.correctRotationTrackData(_data.vesselPool[i]);
           this.initVessel(_data.vesselPool[i], validCounter);
           range._count++;
@@ -489,6 +498,11 @@ class VTPlayer extends React.Component {
 
       validCounter++;
     }
+
+    // save Debug
+    // let data = new Blob([JSON.stringify(trackData)], {type: "application/json"});
+    // saveAs(data, "vesselData.json");
+
 
     this.updateDebug();
 
@@ -559,7 +573,7 @@ class VTPlayer extends React.Component {
 
     // parse Track
     let parsedTrack = [];
-    for (let i = 0; i < _vesselData['trackData'].length - 1; i++) {
+    for (let i = 0; i < _vesselData['trackData'].length; i++) {
       let pointColor = 0x000000;
       let currentTrackPoint = _vesselData['trackData'][i];
       let nextTrackPoint = _vesselData['trackData'][i + 1];
@@ -570,20 +584,26 @@ class VTPlayer extends React.Component {
       VTPlayerUtils.plotPoint(this.pathLayer, new Vector2(currentPosition[0], currentPosition[1]), pointColor, 1);
 
       // plot path
-      VTPlayerUtils.plotLine(this.pathLayer,
-        VTPlayerUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon),
-        VTPlayerUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon),
-        0x136c0e
-      );
+      if (i < _vesselData['trackData'].length - 1) {
+        VTPlayerUtils.plotLine(this.pathLayer,
+          VTPlayerUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon),
+          VTPlayerUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon),
+          0x136c0e
+        );
+      }
 
     }
+
+    vessel.parsedTrack = parsedTrack;
+
 
     vessel.x = parsedTrack[0].x;
     vessel.y = parsedTrack[0].y;
 
+
     let trackTween = TweenMax.to(vessel, this.trackLength, {
       bezier: {
-        curviness: 1,
+        curviness: 0,
         type: 'thru',
         values: parsedTrack,
         autoRotate: false

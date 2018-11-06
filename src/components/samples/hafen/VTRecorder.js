@@ -13,7 +13,7 @@ class VTRecorder {
     this.timerData = {
       timeStep: 60,
       currentStep: 0,
-      recordLength: 120
+      recordLength: 60 * 2,
     };
 
     this.vesselPool = [];
@@ -212,20 +212,20 @@ class VTRecorder {
         // if (vesselPool[i]['trackData'].length >= 1) {
         //   const pathArrayLength = vesselPool[i]['trackData'].length;
         //   const traveledDistance = this.getDistance(vesselPool[i]['trackData'][pathArrayLength - 1], vesselPool[i]['trackData'][pathArrayLength - 2]);
-          // if (traveledDistance < .00005 && result[0]['aisPosition']['sog'] <= .3) {
-          // if (traveledDistance < .00003) {
-          //   vesselPool[i]['status'] = 'static';
-            // let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
-            // vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
-            //   {
-            //     status: 'static',
-            //     lat: lastTrackData['lat'],
-            //     lon: lastTrackData['lon'],
-            //     sog: result[0]['aisPosition']['sog'],
-            //     cog: result[0]['aisPosition']['cog'],
-            //     hdg: result[0]['aisPosition']['hdg']
-            //   }
-          // }
+        // if (traveledDistance < .00005 && result[0]['aisPosition']['sog'] <= .3) {
+        // if (traveledDistance < .00003) {
+        //   vesselPool[i]['status'] = 'static';
+        // let lastTrackData = vesselPool[i]['trackData'][pathArrayLength - 2];
+        // vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1] =
+        //   {
+        //     status: 'static',
+        //     lat: lastTrackData['lat'],
+        //     lon: lastTrackData['lon'],
+        //     sog: result[0]['aisPosition']['sog'],
+        //     cog: result[0]['aisPosition']['cog'],
+        //     hdg: result[0]['aisPosition']['hdg']
+        //   }
+        // }
         // }
 
         // check => in mapRange
@@ -238,7 +238,7 @@ class VTRecorder {
         }
 
         // check movement
-        if (!vesselPool[i]['hasMoved'] && result[0]['geoDetails']['status'] == 'moving' && this.hasMoved(vesselPool[i]['trackData'])) vesselPool[i]['hasMoved'] = true;
+        if (!vesselPool[i]['hasMoved'] && result[0]['geoDetails']['status'] === 'moving' && this.hasMoved(vesselPool[i]['trackData'])) vesselPool[i]['hasMoved'] = true;
 
 
         // check for large distance jumps (unvalid data! => 0.13 ~ 800m)
@@ -489,18 +489,19 @@ class VTRecorder {
     for (let i = 0; i < vesselPool.length; i++) {
       const hasMoved = vesselPool[i]['hasMoved'];
       if (hasMoved) this.optimizeTrackData(vesselPool[i]);
-      // this.correctRotationTrackData(vesselPool[i])
+      this.correctRotationTrackData(vesselPool[i])
     }
   }
 
   correctRotationTrackData(_vesselData) {
 
-    // console.log('=== start parse ===', _vesselData['mmsi'], _vesselData['trackData'])
+    // console.log('=== start parse ===', _vesselData['mmsi'], _vesselData['trackData']);
 
-    let startIndex = 0;
-    let endIndex = 0;
+    let startReplace = 0;
+    let endReplace = 0;
     let setAtStart = false;
-    let lastValidRotation = 0;
+    let _lastValidRotation = 0;
+    let _tempRotationBeforeMoored = 0;
 
     for (let i = 0; i < _vesselData['trackData'].length; i++) {
 
@@ -509,34 +510,44 @@ class VTRecorder {
       const nextTrackPoint = (i < _vesselData['trackData'].length - 1) ? _vesselData['trackData'][i + 1] : null;
       const nextRotation = nextTrackPoint != null ? this.getRotation(nextTrackPoint) : null;
 
-      if (currentRotation !== 0) {
-        lastValidRotation = currentRotation;
-        _vesselData['trackData'][i]['rot'] = currentRotation;
+      if (currentRotation !== 360) {
+        _lastValidRotation = currentRotation;
       }
+      _vesselData['trackData'][i]['rot'] = _lastValidRotation;
+
 
       if (nextRotation != null) {
 
         // if rotation at start == zero => fill with next valid value
-        if (currentRotation === 0 && nextRotation === 0 && !setAtStart && i === 0) {
+        if (currentRotation === 360 && nextRotation === 360 && !setAtStart && i === 0) {
           setAtStart = true;
-          startIndex = i;
+          startReplace = i;
         }
 
-        if (nextRotation !== 0 && setAtStart) {
-          endIndex = i;
-          for (let j = startIndex; j < endIndex + 1; j++) {
+        if (nextRotation !== 360 && setAtStart) {
+          endReplace = i;
+          for (let j = startReplace; j < endReplace + 1; j++) {
             _vesselData['trackData'][j]['rot'] = nextRotation;
           }
           setAtStart = false;
         }
 
         // if next zero => replace with latest valid
-        if (nextRotation === 0) _vesselData['trackData'][i + 1]['rot'] = lastValidRotation;
+        if (nextRotation === 360) _vesselData['trackData'][i + 1]['rot'] = _lastValidRotation;
 
-      } else {
 
-        if (currentRotation === 0) {
-          _vesselData['trackData'][i]['rot'] = 0;
+        if (currentTrackPoint['status'] !== 'moored' && nextTrackPoint['status'] === 'moored') {
+          _tempRotationBeforeMoored = currentRotation;
+        }
+
+        if (currentTrackPoint['status'] === 'moored' && nextTrackPoint['status'] === 'moored') {
+          if (_tempRotationBeforeMoored !== 0) _vesselData['trackData'][i]['rot'] = _tempRotationBeforeMoored;
+
+        }
+
+        if (currentTrackPoint['status'] === 'moored' && nextTrackPoint['status'] !== 'moored') {
+          _tempRotationBeforeMoored = 0;
+          _vesselData['trackData'][i]['rot'] = currentRotation;
         }
 
       }
@@ -631,23 +642,7 @@ class VTRecorder {
         length: _vesselData['aisStatic']['length'],
         width: _vesselData['aisStatic']['width']
       },
-      // aisPosition: {
-      //   lat: _vesselData['aisPosition']['lat'],
-      //   lon: _vesselData['aisPosition']['lon'],
-      //   sog: _vesselData['aisPosition']['sog'],
-      //   cog: _vesselData['aisPosition']['cog'],
-      //   hdg: _vesselData['aisPosition']['hdg']
-      // },
-      trackData: [
-        // {
-        //   status: vesselData['geoDetails']['status'],
-        //   lat: this.getFixed(vesselData['aisPosition']['lat']),
-        //   lon: this.getFixed(vesselData['aisPosition']['lon']),
-        //   sog: vesselData['aisPosition']['sog'],
-        //   cog: vesselData['aisPosition']['cog'],
-        //   hdg: vesselData['aisPosition']['hdg']
-        // }
-      ]
+      trackData: []
     };
 
 
@@ -658,7 +653,9 @@ class VTRecorder {
         lon: _vesselData['trackData'][i]['lon'],
         cog: _vesselData['trackData'][i]['cog'],
         hdg: _vesselData['trackData'][i]['hdg'],
+        // rot: this.getRotation(_vesselData['aisPosition']),
         rot: _vesselData['trackData'][i]['rot'],
+        sog: _vesselData['trackData'][i]['sog'],
       }
     }
 
