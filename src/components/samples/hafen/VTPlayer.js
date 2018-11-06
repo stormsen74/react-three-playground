@@ -15,7 +15,7 @@ import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 import saveAs from "file-saver";
 
-const trackData = require("./trackData/11_06_11_28_l120_vesselData.json");
+const trackData = require("./trackData/11_06_17_15_l120_vesselData.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -108,6 +108,7 @@ class VTPlayer extends React.Component {
     this.mapLayer.interactive = true;
     this.boundsLayer = new PIXI.Container();
     this.pathLayer = new PIXI.Container();
+    this.pathLayer.blendMode = PIXI.BLEND_MODES.ADD;
     this.vesselLayer = new PIXI.Container();
     this.staticVesselLayer = new PIXI.Container();
     this.statsLayer = new PIXI.Container();
@@ -130,7 +131,7 @@ class VTPlayer extends React.Component {
     });
 
     this.mapLayer.cacheAsBitmap = true;
-    this.pathLayer.cacheAsBitmap = true;
+    // this.pathLayer.cacheAsBitmap = true;
 
     this.app.stage.addChild(this.mapLayer);
     this.app.stage.addChild(this.boundsLayer);
@@ -412,7 +413,7 @@ class VTPlayer extends React.Component {
 
   correctRotationTrackData(_vesselData) {
 
-    console.log('=== start parse ===', _vesselData['mmsi'], _vesselData['trackData'])
+    console.log('=== correctRotationTrackData ===', _vesselData['mmsi']);
 
     let startReplace = 0;
     let endReplace = 0;
@@ -477,9 +478,9 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 0,
-      end: trackData.meta.numMovingVessels,
-      // end: 69,
+      start: 14,
+      // end: trackData.meta.numMovingVessels,
+      end: 15,
       _count: 0
     };
 
@@ -491,7 +492,7 @@ class VTPlayer extends React.Component {
         if (validCounter < range.end) {
           this.optimizeTrackData(_data.vesselPool[i]);
           this.correctRotationTrackData(_data.vesselPool[i]);
-          this.initVessel(_data.vesselPool[i], validCounter);
+          this.initVessel(_data.vesselPool[i], validCounter, i);
           range._count++;
         }
       }
@@ -502,7 +503,6 @@ class VTPlayer extends React.Component {
     // save Debug
     // let data = new Blob([JSON.stringify(trackData)], {type: "application/json"});
     // saveAs(data, "vesselData.json");
-
 
     this.updateDebug();
 
@@ -539,7 +539,7 @@ class VTPlayer extends React.Component {
     }
   }
 
-  initVessel(_vesselData, _count) {
+  initVessel(_vesselData, _count, _index) {
 
     let vessel = new PIXI.Container();
 
@@ -556,9 +556,9 @@ class VTPlayer extends React.Component {
     VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0xff0000, 1);
     VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0x00ff00, 1);
     VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -15), 0x0000ff, 1);
-    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xf3b611, 4);
-    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xff0000, 4);
-    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0x0000ff, 4);
+    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xf3b611, 2);
+    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xff0000, 2);
+    VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0x0000ff, 2);
 
     this.vesselLayer.addChild(vessel);
 
@@ -588,7 +588,7 @@ class VTPlayer extends React.Component {
         VTPlayerUtils.plotLine(this.pathLayer,
           VTPlayerUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon),
           VTPlayerUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon),
-          0x136c0e
+          0x203808, 1, .75, PIXI.BLEND_MODES.NORMAL
         );
       }
 
@@ -596,25 +596,24 @@ class VTPlayer extends React.Component {
 
     vessel.parsedTrack = parsedTrack;
 
-
     vessel.x = parsedTrack[0].x;
     vessel.y = parsedTrack[0].y;
 
+    if (_index === 0) {
+      let trackTween = TweenMax.to(vessel, this.trackLength, {
+        bezier: {
+          curviness: 0,
+          type: 'thru',
+          values: parsedTrack,
+          autoRotate: false
+        },
+        ease: Power0.easeNone
+      });
 
-    let trackTween = TweenMax.to(vessel, this.trackLength, {
-      bezier: {
-        curviness: 0,
-        type: 'thru',
-        values: parsedTrack,
-        autoRotate: false
-      },
-      ease: Power0.easeNone
-    });
+      this.vesselTimeline.add(trackTween, '0')
+    }
 
-
-    this.vesselTimeline.add(trackTween, '0')
   }
-
 
   getColorByType(type) {
     let color = 0x000000;
@@ -664,7 +663,6 @@ class VTPlayer extends React.Component {
     }
     return color;
   }
-
 
   playTimeline() {
     this.vesselTimeline.play();

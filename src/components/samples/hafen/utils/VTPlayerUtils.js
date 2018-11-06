@@ -61,9 +61,10 @@ VTPlayerUtils.plotPoint = (layer, vPos, color = 0xffffff, r = 1.5) => {
   layer.addChild(point);
 };
 
-VTPlayerUtils.plotLine = (layer, v1, v2, color = 0xffffff, w = 1) => {
+VTPlayerUtils.plotLine = (layer, v1, v2, color = 0xffffff, width = 1, alpha = 1, blendMode = PIXI.BLEND_MODES.NORMAL) => {
   let line = new PIXI.Graphics();
-  line.lineStyle(w, color, 1);
+  line.blendMode = blendMode;
+  line.lineStyle(width, color, alpha);
   line.moveTo(v1.x, v1.y);
   line.lineTo(v2.x, v2.y);
   layer.addChild(line);
