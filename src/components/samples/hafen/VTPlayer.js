@@ -13,9 +13,8 @@ import Mousetrap from 'mousetrap';
 
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
-import saveAs from "file-saver";
 
-const trackData = require("./trackData/11_06_17_15_l120_vesselData.json");
+const trackData = require("./trackData/11_07_16_31_l15_vesselData.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -26,9 +25,10 @@ class VTPlayer extends React.Component {
       package: 'react-dat-gui',
       progress: 0,
       frame: 0,
-      showPath: true,
-      showBounds: true,
+      showPath: false,
+      showBounds: false,
       showStatic: true,
+      showMoving: true,
       showInfo: false,
       feelsLike: '#2FA1D6'
     }
@@ -77,12 +77,16 @@ class VTPlayer extends React.Component {
       const data = this.vesselLayer.children[i].data.trackData[this.currentFrame];
       this.vesselLayer.children[i].x = this.vesselLayer.children[i].parsedTrack[this.currentFrame].x;
       this.vesselLayer.children[i].y = this.vesselLayer.children[i].parsedTrack[this.currentFrame].y;
-      this.vesselLayer.children[i].children[1].rotation = data.cog * 0.0174533;
-      this.vesselLayer.children[i].children[2].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
-      this.vesselLayer.children[i].children[3].rotation = data.rot * 0.0174533;
-      this.vesselLayer.children[i].children[4].visible = data.status == 'static' ? true : false;
-      this.vesselLayer.children[i].children[5].visible = data.status == 'moored' ? true : false;
-      this.vesselLayer.children[i].children[6].visible = data.status == 'waiting' ? true : false;
+      // this.vesselLayer.children[i].children[1].rotation = data.cog * 0.0174533;
+      // this.vesselLayer.children[i].children[2].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
+      // this.vesselLayer.children[i].children[3].rotation = data.rot * 0.0174533;
+      // this.vesselLayer.children[i].children[4].visible = data.status == 'static' ? true : false;
+      // this.vesselLayer.children[i].children[5].visible = data.status == 'moored' ? true : false;
+      // this.vesselLayer.children[i].children[6].visible = data.status == 'waiting' ? true : false;
+      this.vesselLayer.children[i].children[1].rotation = data.rot * 0.0174533;
+      this.vesselLayer.children[i].children[2].visible = data.status == 'static' ? true : false;
+      this.vesselLayer.children[i].children[3].visible = data.status == 'moored' ? true : false;
+      this.vesselLayer.children[i].children[4].visible = data.status == 'waiting' ? true : false;
     }
 
     this.setState({
@@ -131,7 +135,7 @@ class VTPlayer extends React.Component {
     });
 
     this.mapLayer.cacheAsBitmap = true;
-    // this.pathLayer.cacheAsBitmap = true;
+    this.pathLayer.cacheAsBitmap = true;
 
     this.app.stage.addChild(this.mapLayer);
     this.app.stage.addChild(this.boundsLayer);
@@ -478,9 +482,10 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 14,
-      // end: trackData.meta.numMovingVessels,
-      end: 15,
+      start: 0,
+      end: trackData.meta.numMovingVessels,
+      // start: 14,
+      // end: 15,
       _count: 0
     };
 
@@ -491,7 +496,7 @@ class VTPlayer extends React.Component {
       if (validCounter >= range.start) {
         if (validCounter < range.end) {
           this.optimizeTrackData(_data.vesselPool[i]);
-          this.correctRotationTrackData(_data.vesselPool[i]);
+          // this.correctRotationTrackData(_data.vesselPool[i]);
           this.initVessel(_data.vesselPool[i], validCounter, i);
           range._count++;
         }
@@ -514,9 +519,13 @@ class VTPlayer extends React.Component {
     const vesselType = _vesselData['aisStatic']['type'];
     const vesselColor = this.getColorByType(vesselType);
     vesselGraphics.beginFill(vesselColor);
-    vesselGraphics.drawCircle(0, 0, 2);
+    vesselGraphics.drawCircle(0, 0, 4);
     vesselGraphics.endFill();
     vessel.addChild(vesselGraphics);
+
+    VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -15), 0x0000ff, 1);
+    if( _vesselData['aisPosition'].rot ===360) vessel.alpha = .3;
+    vessel.children[1].rotation = _vesselData['aisPosition'].rot * 0.0174533;
 
     let position = VTPlayerUtils.cartesianFromLatLong(_vesselData['aisPosition'].lat, _vesselData['aisPosition'].lon);
     vessel.x = position[0];
@@ -553,9 +562,9 @@ class VTPlayer extends React.Component {
     vesselGraphics.endFill();
     vessel.addChild(vesselGraphics);
 
-    VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0xff0000, 1);
-    VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0x00ff00, 1);
-    VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -15), 0x0000ff, 1);
+    // VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0xff0000, 1); // cog
+    // VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -25), 0x00ff00, 1); // hdg
+    VTPlayerUtils.plotLine(vessel, new Vector2(0, 0), new Vector2(0, -15), 0x0000ff, 1); // rot
     VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xf3b611, 2);
     VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0xff0000, 2);
     VTPlayerUtils.plotPoint(vessel, new Vector2(0, 0), 0x0000ff, 2);
@@ -588,7 +597,7 @@ class VTPlayer extends React.Component {
         VTPlayerUtils.plotLine(this.pathLayer,
           VTPlayerUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon),
           VTPlayerUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon),
-          0x203808, 1, .75, PIXI.BLEND_MODES.NORMAL
+          0x295b29, 1, 1, PIXI.BLEND_MODES.NORMAL
         );
       }
 
@@ -682,6 +691,7 @@ class VTPlayer extends React.Component {
     if (this.pathLayer) this.pathLayer.visible = data.showPath;
     if (this.boundsLayer) this.boundsLayer.visible = data.showBounds;
     if (this.staticVesselLayer) this.staticVesselLayer.visible = data.showStatic;
+    if (this.vesselLayer) this.vesselLayer.visible = data.showMoving;
     if (this.statsLayer && this.statsLinesLayer) this.statsLayer.visible = this.statsLinesLayer.visible = data.showInfo;
     if (data.showInfo && this.statsLayer.children.length == 0) this.initInfo();
 
@@ -696,6 +706,7 @@ class VTPlayer extends React.Component {
           <DatBoolean path='showPath' label='showPath'/>
           <DatBoolean path='showBounds' label='showBounds'/>
           <DatBoolean path='showStatic' label='showStatic'/>
+          <DatBoolean path='showMoving' label='showMoving'/>
           <DatBoolean path='showInfo' label='showInfo'/>
           {/*<DatColor path='feelsLike' label='Feels Like'/>*/}
         </DatGui>

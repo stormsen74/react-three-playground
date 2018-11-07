@@ -13,7 +13,7 @@ class VTRecorder {
     this.timerData = {
       timeStep: 60,
       currentStep: 0,
-      recordLength: 60 * 2,
+      recordLength: 60,
     };
 
     this.vesselPool = [];
@@ -112,9 +112,23 @@ class VTRecorder {
       rotation = aisPosition['hdg']
     } else {
       if (aisPosition['cog'] === 0 || aisPosition['cog'] === 360) {
-        rotation = 0;
+        rotation = 360;
       } else {
         rotation = aisPosition['cog'];
+      }
+    }
+    return rotation
+  }
+
+  getRotationStatic(trackData) {
+    let rotation = 360;
+    if (trackData['hdg'] !== 511) {
+      rotation = trackData['hdg']
+    } else {
+      if (trackData['cog'] === 0 || trackData['cog'] === 360) {
+        rotation = 360;
+      } else {
+        rotation = trackData['cog'];
       }
     }
     return rotation
@@ -253,7 +267,7 @@ class VTRecorder {
       } else {
         // vessel left pool ...
         let lastTrackData = vesselPool[i]['trackData'][vesselPool[i]['trackData'].length - 1];
-        console.log('vessel left Pool =>', vesselPool[i], lastTrackData);
+        // console.log('vessel left Pool =>', vesselPool[i], lastTrackData);
         vesselPool[i]['status'] = 'lost';
         vesselPool[i]['trackData'].push(
           {
@@ -451,7 +465,16 @@ class VTRecorder {
   }
 
   getReducedStatic(_vesselData) {
-    console.log('reduceStatic', _vesselData)
+    console.log('reduceStatic', _vesselData['mmsi']);
+
+    let validRotation = 360;
+    for (let i = 0; i < _vesselData['trackData'].length; i++) {
+      const rot = this.getRotationStatic(_vesselData['trackData'][i])
+      if (validRotation === 360 && rot !== 360) {
+        validRotation = rot;
+        console.log('validRotation', validRotation);
+      }
+    }
 
     let vessel = {
       mmsi: _vesselData['mmsi'],
@@ -465,7 +488,7 @@ class VTRecorder {
       aisPosition: {
         lat: _vesselData['aisPosition']['lat'],
         lon: _vesselData['aisPosition']['lon'],
-        rot: this.getRotation(_vesselData['aisPosition']),
+        rot: validRotation
       },
     };
 
@@ -479,7 +502,8 @@ class VTRecorder {
       if (!hasMoved) {
         const vesselCopy = Object.assign({}, vessels[i]);
         const reducedStaticData = this.getReducedStatic(vesselCopy);
-        staticVessels.push(reducedStaticData);
+        // filter static with invalid 'rot' here ...
+        if (reducedStaticData['aisPosition']['rot'] !== 360) staticVessels.push(reducedStaticData);
       }
     }
     return staticVessels;
@@ -625,7 +649,7 @@ class VTRecorder {
   }
 
   getReduced(_vesselData) {
-    console.log('reduce', _vesselData)
+    // console.log('reduce', _vesselData)
 
     let vessel = {
       mmsi: _vesselData['mmsi'],
@@ -651,11 +675,10 @@ class VTRecorder {
         status: _vesselData['trackData'][i]['status'],
         lat: _vesselData['trackData'][i]['lat'],
         lon: _vesselData['trackData'][i]['lon'],
-        cog: _vesselData['trackData'][i]['cog'],
-        hdg: _vesselData['trackData'][i]['hdg'],
-        // rot: this.getRotation(_vesselData['aisPosition']),
         rot: _vesselData['trackData'][i]['rot'],
-        sog: _vesselData['trackData'][i]['sog'],
+        // cog: _vesselData['trackData'][i]['cog'],
+        // hdg: _vesselData['trackData'][i]['hdg'],
+        // sog: _vesselData['trackData'][i]['sog'],
       }
     }
 
