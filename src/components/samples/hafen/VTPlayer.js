@@ -14,7 +14,7 @@ import Mousetrap from 'mousetrap';
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 
-const trackData = require("./trackData/11_07_16_31_l15_vesselData.json");
+const trackData = require("./trackData/11_08_12_08_l1080_vesselData.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -168,9 +168,9 @@ class VTPlayer extends React.Component {
       {
         index: 2,
         minLong: 9.932996296296295,
-        maxLong: 9.938879753644025,
+        maxLong: 9.939025925925925,
         minLat: 53.54105922150139,
-        maxLat: 53.53781868981334,
+        maxLat: 53.536557275254864,
         collisionLineStart: VTPlayerUtils.getVectorFromGeoPoint(53.53964556655106, 9.934604198088469),
         collisionLineEnd: VTPlayerUtils.getVectorFromGeoPoint(53.539254092964406, 9.937783457347729)
       },
@@ -482,10 +482,10 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      start: 0,
-      end: trackData.meta.numMovingVessels,
-      // start: 14,
-      // end: 15,
+      // start: 0,
+      // end: trackData.meta.numMovingVessels,
+      start: 100,
+      end: 120,
       _count: 0
     };
 
@@ -497,7 +497,7 @@ class VTPlayer extends React.Component {
         if (validCounter < range.end) {
           this.optimizeTrackData(_data.vesselPool[i]);
           // this.correctRotationTrackData(_data.vesselPool[i]);
-          this.initVessel(_data.vesselPool[i], validCounter, i);
+          this.initVessel(_data.vesselPool[i], validCounter, range._count);
           range._count++;
         }
       }
@@ -549,6 +549,7 @@ class VTPlayer extends React.Component {
   }
 
   initVessel(_vesselData, _count, _index) {
+    console.log(_count, _index)
 
     let vessel = new PIXI.Container();
 
