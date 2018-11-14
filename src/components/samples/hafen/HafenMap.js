@@ -218,7 +218,7 @@ class HafenMap extends React.Component {
     vessel.rotation = vesselData.aisPosition.cog * 0.0174533; // deg to rad
 
     // display 'hdg' if available
-    if (vesselData.aisPosition.hdg != 511) {
+    if (vesselData.aisPosition.hdg !== 511) {
       let line = new PIXI.Graphics();
       line.lineStyle(1, 0x0a17c5, 1);
       line.moveTo(0, 0);

@@ -14,7 +14,7 @@ import Mousetrap from 'mousetrap';
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
 import VTPlayerUtils from "./utils/VTPlayerUtils";
 
-const trackData = require("./trackData/11_08_12_08_l1080_vesselData.json");
+const trackData = require("./trackData/vesselData.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -53,13 +53,14 @@ class VTPlayer extends React.Component {
     this.trackLength = trackData.meta.timeRange - 1;
     this.infoTrack = trackData.meta.infoTrack;
 
-    this.timeStep = 1 / (trackData.meta.timeRange);
+    this.timeStep = 1 / (trackData.meta.timeRange-1);
   }
 
   stepForward() {
     if (this.vesselTimeline.progress() < 1) {
       this.vesselTimeline.progress(this.vesselTimeline.progress() + this.timeStep);
       this.currentFrame = Math.round(this.vesselTimeline.progress() * this.trackLength);
+
       this.updateDebug();
     }
   }
@@ -482,10 +483,10 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
-      // start: 0,
-      // end: trackData.meta.numMovingVessels,
-      start: 100,
-      end: 120,
+      start: 0,
+      end: trackData.meta.numMovingVessels,
+      // start: 100,
+      // end: 120,
       _count: 0
     };
 
