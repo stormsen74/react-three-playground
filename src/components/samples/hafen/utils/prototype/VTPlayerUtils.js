@@ -1,4 +1,4 @@
-import {Vector2} from "../../../../utils/vector2";
+import {Vector2} from "../../../../../utils/vector2";
 import * as PIXI from "pixi.js";
 
 const VTPlayerUtils = {};

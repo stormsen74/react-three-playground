@@ -6,15 +6,15 @@ import 'react-dat-gui/build/react-dat-gui.css';
 import DatGui, {DatBoolean, DatButton, DatNumber} from 'react-dat-gui';
 import * as PIXI from 'pixi.js'
 import CloseIcon from 'core/icons/close.inline.svg';
-import '../Scene.scss'
-import {Vector2} from "../../../utils/vector2";
+import '../../Scene.scss'
+import {Vector2} from "../../../../utils/vector2";
 import Mousetrap from 'mousetrap';
 
 
 import vesselTrackerRange from 'components/samples/hafen/images/ProtoRangeOrigin.png';
-import VTPlayerUtils from "./utils/VTPlayerUtils";
+import VTPlayerUtils from "../utils/prototype/VTPlayerUtils";
 
-const trackData = require("./trackData/vesselData.json");
+const trackData = require("../trackData/vesselData.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 

@@ -1,10 +1,10 @@
 import axios from 'axios';
 import saveAs from 'file-saver';
 import {Vector2} from "../../../utils/vector2";
-import VTRecorderUtils from "./VTRecorderUtils";
+import VTRecorderFinalUtils from "./utils/final/VTRecorderFinalUtils";
 import date from 'date-and-time';
 
-class VTRecorder {
+class VTRecorderFinal {
 
   constructor(_map) {
 
@@ -103,7 +103,7 @@ class VTRecorder {
   }
 
   inMapRange(lat, lon) {
-    return lat < VTRecorderUtils.mapRange.minLat && lat > VTRecorderUtils.mapRange.maxLat && lon > VTRecorderUtils.mapRange.minLong && lon < VTRecorderUtils.mapRange.maxLong;
+    return lat < VTRecorderFinalUtils.mapRange.minLat && lat > VTRecorderFinalUtils.mapRange.maxLat && lon > VTRecorderFinalUtils.mapRange.minLong && lon < VTRecorderFinalUtils.mapRange.maxLong;
   }
 
   getRotation(aisPosition) {
@@ -591,12 +591,12 @@ class VTRecorder {
       const nextTrackPoint = _vesselData['trackData'][i + 1];
 
       // check for intersections
-      for (let b = 0; b < VTRecorderUtils.collisionBounds.length; b++) {
-        if (VTRecorderUtils.isInBounds(currentTrackPoint, VTRecorderUtils.collisionBounds[b])) {
-          const collisionBounds = VTRecorderUtils.collisionBounds[b];
-          const line_start = VTRecorderUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon);
-          const line_end = VTRecorderUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon);
-          const intersecting = VTRecorderUtils.lineIntersecting(collisionBounds.collisionLineStart, collisionBounds.collisionLineEnd, line_start, line_end);
+      for (let b = 0; b < VTRecorderFinalUtils.collisionBounds.length; b++) {
+        if (VTRecorderFinalUtils.isInBounds(currentTrackPoint, VTRecorderFinalUtils.collisionBounds[b])) {
+          const collisionBounds = VTRecorderFinalUtils.collisionBounds[b];
+          const line_start = VTRecorderFinalUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon);
+          const line_end = VTRecorderFinalUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon);
+          const intersecting = VTRecorderFinalUtils.lineIntersecting(collisionBounds.collisionLineStart, collisionBounds.collisionLineEnd, line_start, line_end);
           if (intersecting) {
             console.log('intersected', _vesselData['mmsi'], Vector2.getDistance(collisionBounds.collisionLineStart, intersecting));
             intersected.push({
@@ -617,8 +617,8 @@ class VTRecorder {
       for (let j = 0; j < intersected.length; j++) {
         io = intersected[j];
 
-        const v1 = VTRecorderUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
-        const v2 = VTRecorderUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
+        const v1 = VTRecorderFinalUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
+        const v2 = VTRecorderFinalUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
 
         // ——————————————————————————————————————————————————
         // offset points 90° =>  to origin line
@@ -636,8 +636,8 @@ class VTRecorder {
         const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
 
         // convert back from cartesian to lat/long
-        const newGeoPoint1 = VTRecorderUtils.geoFromCartesian(v1_new.x, v1_new.y);
-        const newGeoPoint2 = VTRecorderUtils.geoFromCartesian(v2_new.x, v2_new.y);
+        const newGeoPoint1 = VTRecorderFinalUtils.geoFromCartesian(v1_new.x, v1_new.y);
+        const newGeoPoint2 = VTRecorderFinalUtils.geoFromCartesian(v2_new.x, v2_new.y);
 
         // overwrite old geo-coordinates
         _vesselData['trackData'][io.index].lat = newGeoPoint1[0];
@@ -745,12 +745,12 @@ class VTRecorder {
     const trackLength = this.infoTrack.length;
 
     let vesselData = new Blob([JSON.stringify(data)], {type: "application/json"});
-    saveAs(vesselData, dateString + "_l" + trackLength + "_vesselData.json");
+    saveAs(vesselData, dateString + "_l" + trackLength + "_vesselData_final.json");
   }
 }
 
 
-export default VTRecorder
+export default VTRecorderFinal
 
 
 

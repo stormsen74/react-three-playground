@@ -11,8 +11,8 @@ import {Vector2} from "../../../utils/vector2";
 import moment from 'moment';
 
 
-import VTPlayerUtils from "./utils/VTPlayerUtils";
-import CatmullSpline from "./CatmullSpline";
+import VTPlayerUtils from "./utils/prototype/VTPlayerUtils";
+import CatmullSpline from "./utils/catmull-rom/CatmullSpline";
 import mathUtils from "../../../utils/mathUtils";
 import axios from "axios";
 

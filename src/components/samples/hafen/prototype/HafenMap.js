@@ -6,10 +6,10 @@ import CloseIcon from 'core/icons/close.inline.svg';
 import vesselTrackerRange from 'components/samples/hafen/images/VesselTrackerRange.png';
 import * as PIXI from 'pixi.js'
 
-import '../Scene.scss'
+import '../../Scene.scss'
 import 'bootstrap/dist/css/bootstrap.css';
 import VTRecorder from "./VTRecorder";
-import VTRecorderUtils from "./VTRecorderUtils";
+import VTRecorderUtils from "../utils/prototype/VTRecorderUtils";
 
 // Nutzername: jwu
 // Passwort: 9j583t

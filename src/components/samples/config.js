@@ -18,5 +18,15 @@ export const samples = [
     title: 'TidesVisualizer',
     description: 'Here some other description text ...',
     route: '/tides-visualizer'
+  },
+  {
+    title: 'TrackRecorderFinal',
+    description: 'Here some other description text ...',
+    route: '/hafen-map-final'
+  },
+  {
+    title: 'TrackPlayerFinal',
+    description: 'Here some other description text ...',
+    route: '/track-player-final'
   }
 ];
