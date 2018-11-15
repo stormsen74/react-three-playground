@@ -14,7 +14,7 @@ import Mousetrap from 'mousetrap';
 import mapImage from 'components/samples/hafen/images/FinalMap.png';
 import VTPlayerFinalUtils from "./utils/final/VTPlayerFinalUtils";
 
-const trackData = require("./trackDataFinal/11_15_13_23_l60_vesselData_final.json");
+const trackData = require("./trackDataFinal/11_15_16_10_l60_vesselData_final.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -238,19 +238,9 @@ class VTPlayerFinal extends React.Component {
         collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53942952046267, 9.90503051359375),
         collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53926082725061, 9.90996747359375),
       },
-      // {
-      //   index: 10,
-      //   type: 2,
-      //   minLong: 9.976417816796875,
-      //   maxLong: 9.978517440000001,
-      //   minLat: 53.54061038066929,
-      //   maxLat: 53.53804622871046,
-      //   collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53892343773761, 9.97823371359375),
-      //   collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53791127228749, 9.97647456),
-      // },
       {
         index: 10,
-        type: 2,
+        type: 1,
         minLong: 9.973920960000001,
         maxLong: 9.978971427187501,
         minLat: 53.54142011302939,
@@ -411,9 +401,10 @@ class VTPlayerFinal extends React.Component {
           const line_end = VTPlayerFinalUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon);
           const intersecting = VTPlayerFinalUtils.lineIntersecting(collisionBounds.collisionLineStart, collisionBounds.collisionLineEnd, line_start, line_end);
           if (intersecting) {
-            console.log('intersected', _vesselData['mmsi'], Vector2.getDistance(collisionBounds.collisionLineStart, intersecting))
+            console.log('intersected', _vesselData['mmsi'], Vector2.getDistance(collisionBounds.collisionLineStart, intersecting));
             intersected.push({
               index: i,
+              intersecting: intersecting,
               type: collisionBounds.type ? collisionBounds.type : 1,
               bounds: collisionBounds,
               crossDistance: Vector2.getDistance(collisionBounds.collisionLineStart, intersecting)
@@ -438,6 +429,8 @@ class VTPlayerFinal extends React.Component {
 
 
         console.log('=>', io.type);
+        const lineIntersectStart = Vector2.subtract(io.bounds.collisionLineStart, io.intersecting)
+        console.log('=>', lineIntersectStart);
 
         let collision_dir = new Vector2()
 
@@ -446,13 +439,7 @@ class VTPlayerFinal extends React.Component {
         // ——————————————————————————————————————————————————
 
         if (io.type === 1) {
-          const line_dir = Vector2.subtract(v1, v2).normalize();
-          // cross-product
-          collision_dir = new Vector2(-line_dir.y, line_dir.x);
-
-          console.log(Vector2.getAngleDEG(line_dir))
-          if (Vector2.getAngleRAD(line_dir) < 0) collision_dir.negate();
-
+          collision_dir = lineIntersectStart.normalize();
         }
 
         // ——————————————————————————————————————————————————
@@ -461,6 +448,13 @@ class VTPlayerFinal extends React.Component {
 
         if (io.type === 2) {
           collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
+        }
+
+        if (io.type === 3) {
+          const line_dir = Vector2.subtract(v1, v2).normalize();
+          // cross-product
+          collision_dir = new Vector2(-line_dir.y, line_dir.x);
+          if (Vector2.getAngleRAD(line_dir) < 0) collision_dir.negate();
         }
 
 
