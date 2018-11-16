@@ -12,9 +12,10 @@ import Mousetrap from 'mousetrap';
 
 
 import mapImage from 'components/samples/hafen/images/FinalMap.png';
+import mapImageLarge from 'components/samples/hafen/images/FinalMapLarge.png';
 import VTPlayerFinalUtils from "./utils/final/VTPlayerFinalUtils";
 
-const trackData = require("./trackDataFinal/11_15_16_10_l60_vesselData_final.json");
+const trackData = require("./trackDataFinal/11_16_11_38_l120_vesselData_final_raw.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -39,6 +40,15 @@ class VTPlayerFinal extends React.Component {
   constructor(props) {
     super(props);
 
+    this.showLargeMap = true;
+    if (!this.showLargeMap) {
+      this.mapImage = mapImage;
+    } else {
+      this.mapImage = mapImageLarge;
+      VTPlayerFinalUtils.mapData.size.width = 3500;
+      VTPlayerFinalUtils.mapData.size.height = 1727;
+    }
+
     this.loadReady = this.loadReady.bind(this);
     this.playTimeline = this.playTimeline.bind(this);
     this.pauseTimeline = this.pauseTimeline.bind(this);
@@ -46,8 +56,8 @@ class VTPlayerFinal extends React.Component {
     this.stepForward = this.stepForward.bind(this);
     this.stepBack = this.stepBack.bind(this);
 
-    Mousetrap.bind('right', this.stepForward);
-    Mousetrap.bind('left', this.stepBack);
+    Mousetrap.bind('6', this.stepForward);
+    Mousetrap.bind('4', this.stepBack);
 
     this.currentFrame = 0;
     this.trackLength = trackData.meta.timeRange - 1;
@@ -103,7 +113,7 @@ class VTPlayerFinal extends React.Component {
   }
 
   initialLoad() {
-    PIXI.loader.add(mapImage).load(this.loadReady);
+      PIXI.loader.add( this.mapImage).load(this.loadReady);
   }
 
   loadReady() {
@@ -126,7 +136,7 @@ class VTPlayerFinal extends React.Component {
     }
 
 
-    let sprite = new PIXI.Sprite(PIXI.loader.resources[mapImage].texture);
+    let sprite = new PIXI.Sprite(PIXI.loader.resources[this.mapImage].texture);
     this.mapLayer.addChild(sprite);
     this.mapLayer.on('click', (e) => {
       // its not really accurate for drawing polygons
@@ -240,7 +250,6 @@ class VTPlayerFinal extends React.Component {
       },
       {
         index: 10,
-        type: 1,
         minLong: 9.973920960000001,
         maxLong: 9.978971427187501,
         minLat: 53.54142011302939,
@@ -250,13 +259,12 @@ class VTPlayerFinal extends React.Component {
       },
       // {
       //   index: 11,
-      //   type: 2,
       //   minLong: 9.896064536796876,
       //   maxLong: 9.90366859359375,
       //   minLat: 53.540205514489244,
       //   maxLat: 53.53511094890511,
-      //   collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.536696673747336, 9.90156896),
-      //   collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53679789029235, 9.89617803359375),
+      //   collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53696658504885, 9.899923313593751),
+      //   collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53841735501255, 9.897426456796875),
       // }
     ];
 
@@ -272,6 +280,7 @@ class VTPlayerFinal extends React.Component {
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[8], this.boundsLayer);
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[9], this.boundsLayer);
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[10], this.boundsLayer);
+    // VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[11], this.boundsLayer);
 
     this.initTimeline();
     this.parseTrackData(trackData);
@@ -557,8 +566,14 @@ class VTPlayerFinal extends React.Component {
 
       if (validCounter >= range.start) {
         if (validCounter < range.end) {
+
+          // ——————————————————————————————————————————————————
+          // debug optimizations ...
+          // ——————————————————————————————————————————————————
           this.optimizeTrackData(_data.vesselPool[i]);
-          // this.correctRotationTrackData(_data.vesselPool[i]);
+          this.correctRotationTrackData(_data.vesselPool[i]);
+
+
           this.initVessel(_data.vesselPool[i], validCounter, range._count);
           range._count++;
         }

@@ -52,14 +52,17 @@ class TidesVisualizer extends React.Component {
     // https://www.pegelonline.wsv.de/webservice/ueberblick
     // https://www.pegelonline.wsv.de/webservices/zeitreihe/visualisierung?pegelnummer=5952050
 
-    let today = moment({hour: 0}).format();
-    today = moment(today).subtract(1, 'day'); // yesterday is valid [https://www.pegelonline.wsv.de/webservice/dokuAkt]
-    let timeStart = moment(today).subtract(0, 'hours').utc(false).format();
-    let timeEnd = moment(today).add(1, 'day').utc(false).add(2, 'hours').format();
+    let today = moment({hour: 0}).add(1, 'hour').format(); // add 1 hour => utc+1
+    let yesterday = moment(today).subtract(1, 'day'); // yesterday is valid [https://www.pegelonline.wsv.de/webservice/dokuAkt]
+    // let timeStart = moment(yesterday).format();
+    // let timeEnd = moment(yesterday).add(1, 'day').format();
+
+    let timeStart = moment(yesterday).toISOString();
+    let timeEnd = moment(yesterday).add(1, 'day').toISOString();
 
     this.tides = {
       extremes: [],
-      date:today,
+      date: today,
       timeStart: timeStart,
       timeEnd: timeEnd,
       range: []
@@ -155,16 +158,40 @@ class TidesVisualizer extends React.Component {
     });
   }
 
+
+  getValleysAndPeaks(values) {
+    let peakIndexes = [];
+    let valleyIndexes = []
+
+    let directionUp = values[0] <= values[1];
+
+    for (let i = 1; i < values.length - 1; i++) {
+      if (directionUp && values[i + 1] < values[i]) {
+        peakIndexes.push({index: i, values: values[i]});
+        directionUp = false;
+      }
+      else if (!directionUp && values[i + 1] > values[i]) {
+        valleyIndexes.push({index: i, values: values[i]});
+        directionUp = true;
+      }
+    }
+
+    console.log(peakIndexes, valleyIndexes)
+  }
+
   initCurve(data) {
 
     this.ctrlPoints = [];
     this.plot.stepX = 1500 / data.length;
+
+    let values = [];
     for (let i = 0; i < data.length; i += 30) {
-      // console.log(i / 60);
       let x = this.vstart.x - (this.plot.stepX * 60) + (this.plot.stepX * i);
       let y = this.vstart.y + 400 - (data[i].value);
       this.ctrlPoints.push([x, y]);
+      values.push(data[i].value)
     }
+    this.getValleysAndPeaks(values);
 
     this.spline = new CatmullSpline(this.ctrlPoints);
 

@@ -483,10 +483,10 @@ class VTPlayer extends React.Component {
   parseTrackData(_data) {
     let validCounter = 0;
     let range = {
+      // start: 0,
+      // end: trackData.meta.numMovingVessels,
       start: 0,
-      end: trackData.meta.numMovingVessels,
-      // start: 100,
-      // end: 120,
+      end: 40,
       _count: 0
     };
 

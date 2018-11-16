@@ -13,7 +13,7 @@ class VTRecorderFinal {
     this.timerData = {
       timeStep: 60,
       currentStep: 0,
-      recordLength: 60,
+      recordLength: 90,
     };
 
     this.vesselPool = [];
@@ -184,7 +184,7 @@ class VTRecorderFinal {
       this.vesselPool[i] = this.createVesselData(data['vessels'][i])
     }
 
-    this.updateInfoTrack(this.getValidVessels(this.vesselPool));
+    this.updateInfoTrack();
     this.mapReferenz.onUpdateTrackerData(this.vesselPool, this.vesselPool.length, this.infoTrack);
 
     console.log(this.vesselPool);
@@ -326,7 +326,7 @@ class VTRecorderFinal {
 
     this.timerData.currentStep++;
     this.mapReferenz.onUpdateTrackerData(this.getValidVessels(this.vesselPool), this.vesselPool.length, this.infoTrack);
-    this.updateInfoTrack(this.getValidVessels(this.vesselPool));
+    this.updateInfoTrack();
 
     if (this.timerData.currentStep === this.timerData.recordLength - 1) {
       this.saveData();
@@ -338,6 +338,21 @@ class VTRecorderFinal {
   // ——————————————————————————————————————————————————
   // info - track
   // ——————————————————————————————————————————————————
+
+  // ——————————————————————————————————————————————————
+  // info - track
+  // ——————————————————————————————————————————————————
+
+  getCurrentVessels(vesselPool) {
+    let filteredPool = [];
+    for (let i = 0; i < vesselPool.length; i++) {
+      const passedMapRange = vesselPool[i]['passedMapRange'];
+      const inMapRange = vesselPool[i]['inMapRange'];
+      const validData = vesselPool[i]['valid'];
+      if (passedMapRange && validData && inMapRange) filteredPool.push(vesselPool[i]);
+    }
+    return filteredPool;
+  }
 
   getLongestVessel(vesselPool) {
     let maxLength = 0;
@@ -429,12 +444,20 @@ class VTRecorderFinal {
     return vesselStatistics
   }
 
-  updateInfoTrack(_filteredVesselPool) {
+  updateInfoTrack() {
+    let _filteredVesselPool = this.getCurrentVessels(this.vesselPool);
+    // maybe do more stuff here ... (moving, static etc.)
+
     const vesselTypes = this.getVesselTypes(_filteredVesselPool);
     const longestVessel = this.getLongestVessel(_filteredVesselPool);
     const fastestVessel = this.getFastestVessel(_filteredVesselPool);
     this.infoTrack.push(
-      {vesselTypes, longestVessel, fastestVessel}
+      {
+        inMapRange: _filteredVesselPool.length,
+        vesselTypes,
+        longestVessel,
+        fastestVessel
+      }
     );
   }
 
@@ -657,7 +680,7 @@ class VTRecorderFinal {
       // valid: _vesselData['valid'],
       // inMapRange: _vesselData['inMapRange'],
       // passedMapRange: _vesselData['passedMapRange'],
-      // hasMoved: _vesselData['hasMoved'],
+      hasMoved: _vesselData['hasMoved'],
 
       aisStatic: {
         name: _vesselData['aisStatic']['name'],
@@ -675,10 +698,11 @@ class VTRecorderFinal {
         status: _vesselData['trackData'][i]['status'],
         lat: _vesselData['trackData'][i]['lat'],
         lon: _vesselData['trackData'][i]['lon'],
-        rot: _vesselData['trackData'][i]['rot'],
-        // cog: _vesselData['trackData'][i]['cog'],
-        // hdg: _vesselData['trackData'][i]['hdg'],
-        // sog: _vesselData['trackData'][i]['sog'],
+        cog: _vesselData['trackData'][i]['cog'],
+        hdg: _vesselData['trackData'][i]['hdg'],
+        sog: _vesselData['trackData'][i]['sog'],
+
+        // rot: _vesselData['trackData'][i]['rot'],
       }
     }
 
@@ -717,12 +741,12 @@ class VTRecorderFinal {
   saveData(asRawData = false) {
 
     // const _vesselDataCopy = [...this.vesselPool];
+
     const _validVessels = this.getValidVessels(this.vesselPool);
     const _movingVessels = this.getMovingVessels(_validVessels);
     const _staticVessels = this.getStaticVessels(_validVessels);
-    this.optimizePool(_validVessels);
+    // this.optimizePool(_validVessels);
     const _movingVesselsReduced = this.reduceTrackData(_movingVessels);
-    // if (!asRawData) {}
 
     console.log('filteredPoolLength: ', _validVessels.length);
 
@@ -735,8 +759,6 @@ class VTRecorderFinal {
         staticVessels: _staticVessels,
         infoTrack: this.infoTrack
       },
-      // vesselPool: this.vesselPool
-      // vesselPool: _movingVessels
       vesselPool: _movingVesselsReduced
     };
 
