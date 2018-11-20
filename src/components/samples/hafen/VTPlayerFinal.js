@@ -15,7 +15,7 @@ import mapImage from 'components/samples/hafen/images/FinalMap.png';
 import mapImageLarge from 'components/samples/hafen/images/FinalMapLarge.png';
 import VTPlayerFinalUtils from "./utils/final/VTPlayerFinalUtils";
 
-const trackData = require("./trackDataFinal/2018_11_18/2018-11-18_0900-1200_180.json");
+const trackData = require("./trackDataFinal/2018_11_18/2018-11-18_1200-1500_180.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -48,6 +48,14 @@ class VTPlayerFinal extends React.Component {
       VTPlayerFinalUtils.mapData.size.width = 3500;
       VTPlayerFinalUtils.mapData.size.height = 1727;
     }
+
+    this.range = {
+      start: 0,
+      end: trackData.meta.numMovingVessels,
+      // start: 66,
+      // end: 68,
+      _count: 0
+    };
 
     this.loadReady = this.loadReady.bind(this);
     this.playTimeline = this.playTimeline.bind(this);
@@ -298,12 +306,30 @@ class VTPlayerFinal extends React.Component {
       },
       {
         index: 15,
-        minLong: 9.977820272851563,
-        maxLong: 9.980900803710938,
-        minLat: 53.53986068326578,
-        maxLat: 53.5380299934745,
+        minLong: 9.976847472851563,
+        maxLong: 9.980819734570312,
+        minLat: 53.540366531557616,
+        maxLat: 53.535693455391396,
         collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53906577880718, 9.979522672851562),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.538270874348584, 9.979765872851564),
+        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.5366088013897, 9.977739203710938),
+      },
+      {
+        index: 16,
+        minLong: 9.990628811132813,
+        maxLong: 9.997803211132814,
+        minLat: 53.536536537348006,
+        maxLat: 53.53270654313839,
+        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53480220034742, 9.992858134570312),
+        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53316421393222, 9.995817072851564),
+      },
+      {
+        index: 17,
+        minLong: 9.974699203710937,
+        maxLong: 9.982522134570313,
+        minLat: 53.52617869063722,
+        maxLat: 53.5239625940938,
+        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.525431961471305, 9.979076803710939),
+        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.52427573680425, 9.979522672851562),
       }
     ];
 
@@ -324,6 +350,8 @@ class VTPlayerFinal extends React.Component {
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[13], this.boundsLayer);
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[14], this.boundsLayer);
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[15], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[16], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[17], this.boundsLayer);
 
     this.initTimeline();
     this.parseTrackData(trackData);
@@ -370,15 +398,15 @@ class VTPlayerFinal extends React.Component {
   }
 
   updateInfo() {
-    console.log('updateInfo => ', this.infoTrack[this.currentFrame]);
+    // console.log('updateInfo => ', this.infoTrack[this.currentFrame]);
     const vesselArray = [...this.infoTrack[this.currentFrame]['vesselTypes']];
     const sumArray = array => array.reduce((a, b) => a + b, 0);
-    console.log(this.infoTrack[this.currentFrame]['inMapRange'], sumArray(vesselArray));
+    // console.log(this.infoTrack[this.currentFrame]['inMapRange'], sumArray(vesselArray));
 
     const percent = sumArray(vesselArray);
     const mapped = vesselArray.map(value => (value / percent));
-    console.log('mapped => ', mapped);
-    console.log(sumArray(mapped));
+    // console.log('mapped => ', mapped);
+    // console.log(sumArray(mapped));
 
     // draw
     for (let i = 0; i < this.statsLinesLayer.children.length; i++) {
@@ -481,7 +509,7 @@ class VTPlayerFinal extends React.Component {
             intersected.push({
               index: i,
               intersecting: intersecting,
-              type: collisionBounds.type ? collisionBounds.type : 1,
+              type: collisionBounds.type || 1,
               bounds: collisionBounds,
               crossDistance: Vector2.getDistance(collisionBounds.collisionLineStart, intersecting)
             });
@@ -504,7 +532,7 @@ class VTPlayerFinal extends React.Component {
         VTPlayerFinalUtils.plotPoint(this.boundsLayer, v2, 0xffffff);
 
 
-        // console.log('=>', io.type);
+        // console.log('=>', io);
         const lineIntersectStart = Vector2.subtract(io.bounds.collisionLineStart, io.intersecting)
         let collision_dir = new Vector2();
 
@@ -531,6 +559,15 @@ class VTPlayerFinal extends React.Component {
         //   if (Vector2.getAngleRAD(line_dir) < 0) collision_dir.negate();
         // }
 
+        // ——————————————————————————————————————————————————
+        // do nothing!
+        // ——————————————————————————————————————————————————
+
+        if (io.type === 0) {
+          console.log('spdm')
+          return
+        }
+
 
         const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
         const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
@@ -553,7 +590,7 @@ class VTPlayerFinal extends React.Component {
 
   correctRotationTrackData(_vesselData) {
 
-    console.log('=== correctRotationTrackData ===', _vesselData['mmsi']);
+    // console.log('=== correctRotationTrackData ===', _vesselData['mmsi']);
 
     let startReplace = 0;
     let endReplace = 0;
@@ -617,20 +654,14 @@ class VTPlayerFinal extends React.Component {
 
   parseTrackData(_data) {
     let validCounter = 0;
-    let range = {
-      start: 0,
-      end: trackData.meta.numMovingVessels,
-      // start: 48,
-      // end: 50,
-      _count: 0
-    };
+
 
     console.log('moving:', _data.vesselPool.length);
 
     for (let i = 0; i < _data.vesselPool.length; i++) {
 
-      if (validCounter >= range.start) {
-        if (validCounter < range.end) {
+      if (validCounter >= this.range.start) {
+        if (validCounter < this.range.end) {
 
           // ——————————————————————————————————————————————————
           // debug optimizations ...
@@ -639,8 +670,8 @@ class VTPlayerFinal extends React.Component {
           this.correctRotationTrackData(_data.vesselPool[i]);
 
 
-          this.initVessel(_data.vesselPool[i], validCounter, range._count);
-          range._count++;
+          this.initVessel(_data.vesselPool[i], validCounter, this.range._count);
+          this.range._count++;
         }
       }
 
