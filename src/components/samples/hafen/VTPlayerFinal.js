@@ -15,7 +15,7 @@ import mapImage from 'components/samples/hafen/images/FinalMap.png';
 import mapImageLarge from 'components/samples/hafen/images/FinalMapLarge.png';
 import VTPlayerFinalUtils from "./utils/final/VTPlayerFinalUtils";
 
-const trackData = require("./trackDataFinal/2018_11_18/2018-11-18_1200-1500_180.json");
+const trackData = require("./trackDataFinal/2018_11_21/2018-11-21_1200-1400_120.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -30,7 +30,6 @@ class VTPlayerFinal extends React.Component {
       showBounds: false,
       showStatic: true,
       showMoving: true,
-      showInfo: false,
       feelsLike: '#2FA1D6'
     }
   };
@@ -69,7 +68,6 @@ class VTPlayerFinal extends React.Component {
 
     this.currentFrame = 0;
     this.trackLength = trackData.meta.timeRange - 1;
-    this.infoTrack = trackData.meta.infoTrack;
 
     this.timeStep = 1 / (trackData.meta.timeRange - 1);
   }
@@ -91,8 +89,6 @@ class VTPlayerFinal extends React.Component {
   }
 
   updateDebug() {
-    this.updateInfo();
-
     for (let i = 0; i < this.vesselLayer.children.length; i++) {
       const data = this.vesselLayer.children[i].data.trackData[this.currentFrame];
       this.vesselLayer.children[i].x = this.vesselLayer.children[i].parsedTrack[this.currentFrame].x;
@@ -135,16 +131,6 @@ class VTPlayerFinal extends React.Component {
     this.pathLayer.blendMode = PIXI.BLEND_MODES.ADD;
     this.vesselLayer = new PIXI.Container();
     this.staticVesselLayer = new PIXI.Container();
-    this.statsLayer = new PIXI.Container();
-    this.statsLayer.y = 0;
-    this.statsLayer.x = 55;
-    this.statsLinesLayer = new PIXI.Container();
-    this.statsLinesLayer.x = this.statsLayer.x;
-    this.statsLinesLayer.y = this.statsLayer.y;
-
-    if (this.statsLayer && this.statsLinesLayer) {
-      this.statsLayer.visible = this.statsLinesLayer.visible = this.state.data.showInfo
-    }
 
 
     let sprite = new PIXI.Sprite(PIXI.loader.resources[this.mapImage].texture);
@@ -164,9 +150,6 @@ class VTPlayerFinal extends React.Component {
     this.app.stage.addChild(this.pathLayer);
     this.app.stage.addChild(this.staticVesselLayer);
     this.app.stage.addChild(this.vesselLayer);
-    this.app.stage.addChild(this.statsLayer);
-    this.app.stage.addChild(this.statsLinesLayer);
-
 
     this.collisionBounds = [
       {
@@ -364,23 +347,6 @@ class VTPlayerFinal extends React.Component {
     TweenMax.to(this.canvasWrapper, .5, {delay: .25, opacity: 1, ease: Cubic.easeIn});
   }
 
-  initInfo() {
-    let shape = new PIXI.Graphics();
-    shape.beginFill(0x000000, .85);
-    // shape.lineStyle(.5, 0x000000);
-    shape.drawRect(0, 0, 500, 50);
-    shape.endFill();
-    this.statsLayer.addChild(shape);
-
-    // for (let i = 0; i < VTPlayerFinalUtils.vesselTypes.length; i++) {
-    //   let display = new PIXI.Text(VTPlayerFinalUtils.vesselTypes[i], {fontFamily: 'Tahoma', fontSize: 12, fill: this.getColorByType(VTPlayerFinalUtils.vesselTypes[i]), align: 'center'});
-    //   display.x = 10;
-    //   display.y = 5 + i * 15;
-    //   this.statsLayer.addChild(display);
-    // }
-
-    // this.getInfoFrame(0);
-  }
 
   initStage() {
     this.app = new PIXI.Application({
@@ -396,46 +362,6 @@ class VTPlayerFinal extends React.Component {
     this.canvasWrapper.appendChild(this.app.view);
 
   }
-
-  updateInfo() {
-    // console.log('updateInfo => ', this.infoTrack[this.currentFrame]);
-    const vesselArray = [...this.infoTrack[this.currentFrame]['vesselTypes']];
-    const sumArray = array => array.reduce((a, b) => a + b, 0);
-    // console.log(this.infoTrack[this.currentFrame]['inMapRange'], sumArray(vesselArray));
-
-    const percent = sumArray(vesselArray);
-    const mapped = vesselArray.map(value => (value / percent));
-    // console.log('mapped => ', mapped);
-    // console.log(sumArray(mapped));
-
-    // draw
-    for (let i = 0; i < this.statsLinesLayer.children.length; i++) {
-      this.statsLinesLayer.children[i].destroy();
-    }
-    this.statsLinesLayer.removeChildren(0, this.statsLinesLayer.children.length);
-
-    let xOffset = 0;
-    for (let i = 0; i < VTPlayerFinalUtils.vesselTypes.length; i++) {
-      let value = mapped[i] * 500;
-      VTPlayerFinalUtils.plotLine(this.statsLinesLayer, new Vector2(xOffset, 25), new Vector2(xOffset + value, 25), this.getColorByType(VTPlayerFinalUtils.vesselTypes[i]), 50)
-      xOffset += value;
-    }
-  }
-
-  // getInfoFrame(frame) {
-  //
-  //   if (!this.state.data.showInfo) return;
-  //
-  //   for (let i = 0; i < this.statsLinesLayer.children.length; i++) {
-  //     this.statsLinesLayer.children[i].destroy();
-  //   }
-  //   this.statsLinesLayer.removeChildren(0, this.statsLinesLayer.children.length);
-  //
-  //   for (let i = 0; i < VTPlayerFinalUtils.vesselTypes.length; i++) {
-  //     const count = this.infoTrack[frame]['vesselTypes'][i];
-  //     VTPlayerFinalUtils.plotLine(this.statsLinesLayer, new Vector2(120, i * 15), new Vector2(120 + count * 2, i * 15), this.getColorByType(VTPlayerFinalUtils.vesselTypes[i]), 5)
-  //   }
-  // }
 
   initTimeline() {
     this.vesselTimeline = new TimelineMax({
@@ -666,8 +592,8 @@ class VTPlayerFinal extends React.Component {
           // ——————————————————————————————————————————————————
           // debug optimizations ...
           // ——————————————————————————————————————————————————
-          this.optimizeTrackData(_data.vesselPool[i]);
-          this.correctRotationTrackData(_data.vesselPool[i]);
+          // this.optimizeTrackData(_data.vesselPool[i]);
+          // this.correctRotationTrackData(_data.vesselPool[i]);
 
 
           this.initVessel(_data.vesselPool[i], validCounter, this.range._count);
@@ -867,8 +793,6 @@ class VTPlayerFinal extends React.Component {
     if (this.boundsLayer) this.boundsLayer.visible = data.showBounds;
     if (this.staticVesselLayer) this.staticVesselLayer.visible = data.showStatic;
     if (this.vesselLayer) this.vesselLayer.visible = data.showMoving;
-    if (this.statsLayer && this.statsLinesLayer) this.statsLayer.visible = this.statsLinesLayer.visible = data.showInfo;
-    if (data.showInfo && this.statsLayer.children.length == 0) this.initInfo();
 
     return (
       <div className={'wrapper'}>
@@ -882,8 +806,6 @@ class VTPlayerFinal extends React.Component {
           <DatBoolean path='showBounds' label='showBounds'/>
           <DatBoolean path='showStatic' label='showStatic'/>
           <DatBoolean path='showMoving' label='showMoving'/>
-          <DatBoolean path='showInfo' label='showInfo'/>
-          {/*<DatColor path='feelsLike' label='Feels Like'/>*/}
         </DatGui>
         <a href={'/'}>
           <CloseIcon fill={'#000000'} className="close-icon"/>
