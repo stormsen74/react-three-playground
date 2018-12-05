@@ -4,7 +4,7 @@ import {Button} from 'reactstrap';
 import 'gsap/TweenMax';
 import CloseIcon from 'core/icons/close.inline.svg';
 // import mapImage from 'components/samples/hafen/images/FinalMap.png';
-import mapImage from 'components/samples/hafen/images/FinalMapReferenz.jpg';
+import mapImage from 'components/samples/hafen/images/FinalMapReferenz.png';
 import * as PIXI from 'pixi.js'
 
 import '../Scene.scss'

@@ -3,23 +3,23 @@ import {Vector2} from "../../../../../utils/vector2";
 const VTRecorderFinalUtils = {};
 
 VTRecorderFinalUtils.GeoBounds = {
-  minLong: 9.8030,
+  minLong: 9.7841,
   maxLong: 10.0158,
   minLat: 53.5550,
-  maxLat: 53.4926
+  maxLat: 53.4948
 };
 
 VTRecorderFinalUtils.mapRange = {
-  minLong: 9.8030,
+  minLong: 9.7841,
   maxLong: 10.0158,
   minLat: 53.5550,
-  maxLat: 53.4926
+  maxLat: 53.4948
 };
 
 VTRecorderFinalUtils.mapData = {
   size: {
     width: 2500,
-    height: 1233
+    height: 1093
   }
 };
 

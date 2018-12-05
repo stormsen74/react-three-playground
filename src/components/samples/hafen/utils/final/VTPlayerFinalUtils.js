@@ -4,16 +4,16 @@ import * as PIXI from "pixi.js";
 const VTPlayerFinalUtils = {};
 
 VTPlayerFinalUtils.GeoBounds = {
-  minLong: 9.8030,
+  minLong: 9.7841,
   maxLong: 10.0158,
   minLat: 53.5550,
-  maxLat: 53.4926
+  maxLat: 53.4948
 };
 
 VTPlayerFinalUtils.mapData = {
   size: {
-    width: 2500,
-    height: 1233
+    width: 3500,
+    height: 1530
   }
 };
 

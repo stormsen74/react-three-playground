@@ -15,7 +15,7 @@ import mapImage from 'components/samples/hafen/images/FinalMap.png';
 import mapImageLarge from 'components/samples/hafen/images/FinalMapLarge.png';
 import VTPlayerFinalUtils from "./utils/final/VTPlayerFinalUtils";
 
-const trackData = require("./trackDataFinal/2018_11_21/2018-11-21_1200-1400_120.json");
+const trackData = require("./trackDataFinal/2018-12-02_0000-0000_120.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -45,7 +45,7 @@ class VTPlayerFinal extends React.Component {
     } else {
       this.mapImage = mapImageLarge;
       VTPlayerFinalUtils.mapData.size.width = 3500;
-      VTPlayerFinalUtils.mapData.size.height = 1727;
+      VTPlayerFinalUtils.mapData.size.height = 1530;
     }
 
     this.range = {
