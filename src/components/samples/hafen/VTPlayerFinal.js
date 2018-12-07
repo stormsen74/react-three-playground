@@ -1,10 +1,11 @@
 import React from 'react';
 import connect from "react-redux/es/connect/connect";
+import axios from 'axios';
+import * as PIXI from 'pixi.js'
+import DatGui, {DatBoolean, DatButton, DatNumber} from 'react-dat-gui';
 import 'gsap/TweenMax';
 import 'gsap/TimelineMax';
 import 'react-dat-gui/build/react-dat-gui.css';
-import DatGui, {DatBoolean, DatButton, DatNumber} from 'react-dat-gui';
-import * as PIXI from 'pixi.js'
 import CloseIcon from 'core/icons/close.inline.svg';
 import '../Scene.scss'
 import {Vector2} from "../../../utils/vector2";
@@ -14,8 +15,6 @@ import Mousetrap from 'mousetrap';
 import mapImage from 'components/samples/hafen/images/FinalMap.png';
 import mapImageLarge from 'components/samples/hafen/images/FinalMapLarge.png';
 import VTPlayerFinalUtils from "./utils/final/VTPlayerFinalUtils";
-
-const trackData = require("./trackDataFinal/2018-12-02_0000-0000_120.json");
 
 const DEVELOPMENT = process.env.NODE_ENV === 'development';
 
@@ -48,13 +47,6 @@ class VTPlayerFinal extends React.Component {
       VTPlayerFinalUtils.mapData.size.height = 1530;
     }
 
-    this.range = {
-      start: 0,
-      end: trackData.meta.numMovingVessels,
-      // start: 66,
-      // end: 68,
-      _count: 0
-    };
 
     this.loadReady = this.loadReady.bind(this);
     this.playTimeline = this.playTimeline.bind(this);
@@ -63,13 +55,24 @@ class VTPlayerFinal extends React.Component {
     this.stepForward = this.stepForward.bind(this);
     this.stepBack = this.stepBack.bind(this);
 
+    this.shiftdown = this.shiftdown.bind(this);
+    this.shiftup = this.shiftup.bind(this);
+
+    this.shiftIsDown = false;
     Mousetrap.bind('6', this.stepForward);
     Mousetrap.bind('4', this.stepBack);
+    Mousetrap.bind('shift', this.shiftdown, 'keydown');
+    Mousetrap.bind('shift', this.shiftup, 'keyup');
 
-    this.currentFrame = 0;
-    this.trackLength = trackData.meta.timeRange - 1;
 
-    this.timeStep = 1 / (trackData.meta.timeRange - 1);
+  }
+
+  shiftdown() {
+    this.shiftIsDown = true;
+  }
+
+  shiftup() {
+    this.shiftIsDown = false;
   }
 
   stepForward() {
@@ -136,10 +139,10 @@ class VTPlayerFinal extends React.Component {
     let sprite = new PIXI.Sprite(PIXI.loader.resources[this.mapImage].texture);
     this.mapLayer.addChild(sprite);
     this.mapLayer.on('click', (e) => {
-      // its not really accurate for drawing polygons
-      // https://www.scribblemaps.com/
-      const point = this.app.renderer.plugins.interaction.mouse.global;
-      console.log(VTPlayerFinalUtils.geoFromCartesian(point.x, point.y))
+      if(this.shiftIsDown) {
+        const point = this.app.renderer.plugins.interaction.mouse.global;
+        console.log(VTPlayerFinalUtils.geoFromCartesian(point.x, point.y))
+      }
     });
 
     this.mapLayer.cacheAsBitmap = true;
@@ -336,12 +339,54 @@ class VTPlayerFinal extends React.Component {
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[16], this.boundsLayer);
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[17], this.boundsLayer);
 
+    this.loadDataFromAPI(this);
+
+
+  }
+
+  // ——————————————————————————————————————————————————
+  // api - handling
+  // ——————————————————————————————————————————————————
+
+
+  loadDataFromAPI(_this) {
+    const url = 'http://db.dumont.dmdr.io/v1/appdata/?day=0';
+    axios.get(url, {
+      responseType: 'json',
+      headers: {
+        'accept': 'application/json',
+      },
+    }).then(function (response) {
+      _this.init(response.data);
+    }).catch(function (error) {
+      // handle error
+      console.log(error);
+    }).then(function () {
+      // if error debug!
+    });
+  }
+
+  init(appdata) {
+
+    this.range = {
+      start: 0,
+      end: appdata.meta.numMovingVessels,
+      // start: 20,
+      // end: 40,
+      _count: 0
+    };
+
+    this.currentFrame = 0;
+    this.trackLength = appdata.meta.timeRange - 1;
+    this.timeStep = 1 / (appdata.meta.timeRange - 1);
+
     this.initTimeline();
-    this.parseTrackData(trackData);
-    this.parseStaticData(trackData);
+    this.parseTrackData(appdata);
+    this.parseStaticData(appdata);
 
     this.show();
   }
+
 
   show() {
     TweenMax.to(this.canvasWrapper, .5, {delay: .25, opacity: 1, ease: Cubic.easeIn});
