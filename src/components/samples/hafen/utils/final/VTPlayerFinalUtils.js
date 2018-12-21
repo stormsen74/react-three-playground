@@ -71,48 +71,51 @@ VTPlayerFinalUtils.plotLine = (layer, v1, v2, color = 0xffffff, width = 1, alpha
 };
 
 VTPlayerFinalUtils.plotCollisionBounds = (boundsObject, layer) => {
-  let topLeft = VTPlayerFinalUtils.cartesianFromLatLong(boundsObject.minLat, boundsObject.minLong);
-  let topRight = VTPlayerFinalUtils.cartesianFromLatLong(boundsObject.minLat, boundsObject.maxLong);
-  let bottomRight = VTPlayerFinalUtils.cartesianFromLatLong(boundsObject.maxLat, boundsObject.maxLong);
-  let bottomLeft = VTPlayerFinalUtils.cartesianFromLatLong(boundsObject.maxLat, boundsObject.minLong);
+  if (boundsObject) {
+    let topLeft = VTPlayerFinalUtils.cartesianFromLatLong(boundsObject.minLat, boundsObject.minLong);
+    let topRight = VTPlayerFinalUtils.cartesianFromLatLong(boundsObject.minLat, boundsObject.maxLong);
+    let bottomRight = VTPlayerFinalUtils.cartesianFromLatLong(boundsObject.maxLat, boundsObject.maxLong);
+    let bottomLeft = VTPlayerFinalUtils.cartesianFromLatLong(boundsObject.maxLat, boundsObject.minLong);
 
-  let display = new PIXI.Text(boundsObject.index, {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
-  display.x = topLeft[0];
-  display.y = topLeft[1] - 17;
+    let display = new PIXI.Text(boundsObject.index, {fontFamily: 'Arial', fontSize: 15, fill: 0xffffff, align: 'center'});
+    display.x = topLeft[0];
+    display.y = topLeft[1] - 17;
 
-  let container = new PIXI.Container();
-  let shape = new PIXI.Graphics();
-  // shape.beginFill(0xc30000, .1);
-  shape.lineStyle(.5, 0x062f3c);
-  shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
-  shape.endFill();
+    let container = new PIXI.Container();
+    let shape = new PIXI.Graphics();
+    // shape.beginFill(0xc30000, .1);
+    shape.lineStyle(.5, 0x062f3c);
+    shape.drawRect(topLeft[0], topLeft[1], topRight[0] - topLeft[0], bottomLeft[1] - topLeft[1]);
+    shape.endFill();
 
-  container.addChild(shape);
-  container.addChild(display);
-  layer.addChild(container);
+    container.addChild(shape);
+    container.addChild(display);
+    layer.addChild(container);
 
-  for (let i = 0; i <= 3; i++) {
-    let pos = [];
-    switch (i) {
-      case 0:
-        pos = topLeft;
-        break;
-      case 1:
-        pos = topRight;
-        break;
-      case 2:
-        pos = bottomRight;
-        break;
-      case 3:
-        pos = bottomLeft;
-        break;
+    for (let i = 0; i <= 3; i++) {
+      let pos = [];
+      switch (i) {
+        case 0:
+          pos = topLeft;
+          break;
+        case 1:
+          pos = topRight;
+          break;
+        case 2:
+          pos = bottomRight;
+          break;
+        case 3:
+          pos = bottomLeft;
+          break;
+      }
+      VTPlayerFinalUtils.plotPoint(layer, new Vector2(pos[0], pos[1]), 0x000000, 1.5, 'bounds')
     }
-    VTPlayerFinalUtils.plotPoint(layer, new Vector2(pos[0], pos[1]), 0x000000, 1.5, 'bounds')
+
+    VTPlayerFinalUtils.plotPoint(layer, boundsObject.collisionLineStart, 0x00ff00, 1.5, 'bounds');
+    VTPlayerFinalUtils.plotPoint(layer, boundsObject.collisionLineEnd, 0x00ff00, 1.5, 'bounds');
+    VTPlayerFinalUtils.plotLine(layer, boundsObject.collisionLineEnd, boundsObject.collisionLineStart, 0xe100ff);
   }
 
-  VTPlayerFinalUtils.plotPoint(layer, boundsObject.collisionLineStart, 0x00ff00, 1.5, 'bounds');
-  VTPlayerFinalUtils.plotPoint(layer, boundsObject.collisionLineEnd, 0x00ff00, 1.5, 'bounds');
-  VTPlayerFinalUtils.plotLine(layer, boundsObject.collisionLineEnd, boundsObject.collisionLineStart, 0xe100ff);
 
 };
 

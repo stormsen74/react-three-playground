@@ -320,7 +320,8 @@ class VTPlayerFinal extends React.Component {
     ];
 
 
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[0], this.boundsLayer);
+
+
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[1], this.boundsLayer);
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[2], this.boundsLayer);
     VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[3], this.boundsLayer);
@@ -371,8 +372,8 @@ class VTPlayerFinal extends React.Component {
     this.range = {
       start: 0,
       end: appdata.meta.numMovingVessels,
-      // start: 20,
-      // end: 40,
+      // start: 44,
+      // end:45,
       _count: 0
     };
 
