@@ -102,7 +102,7 @@ class VTPlayerFinal extends React.Component {
       // this.vesselLayer.children[i].children[4].visible = data.status == 'static' ? true : false;
       // this.vesselLayer.children[i].children[5].visible = data.status == 'moored' ? true : false;
       // this.vesselLayer.children[i].children[6].visible = data.status == 'waiting' ? true : false;
-      this.vesselLayer.children[i].children[1].rotation = data.rot * 0.0174533;
+      this.vesselLayer.children[i].children[1].rotation = data.r * 0.0174533;
       this.vesselLayer.children[i].children[2].visible = data.status == 'static' ? true : false;
       this.vesselLayer.children[i].children[3].visible = data.status == 'moored' ? true : false;
       this.vesselLayer.children[i].children[4].visible = data.status == 'waiting' ? true : false;
@@ -372,19 +372,19 @@ class VTPlayerFinal extends React.Component {
 
     this.range = {
       start: 0,
-      end: appdata.meta.numMovingVessels,
+      end: appdata.vesselPool.length,
       // start: 44,
       // end:45,
       _count: 0
     };
 
     this.currentFrame = 0;
-    this.trackLength = appdata.meta.timeRange - 1;
-    this.timeStep = 1 / (appdata.meta.timeRange - 1);
+    this.trackLength = 1440;
+    this.timeStep = 1 / (1440);
 
     this.initTimeline();
     this.parseTrackData(appdata);
-    this.parseStaticData(appdata);
+    // this.parseStaticData(appdata);
 
     this.show();
   }
@@ -411,6 +411,7 @@ class VTPlayerFinal extends React.Component {
   }
 
   initTimeline() {
+    console.log('init Timeline')
     this.vesselTimeline = new TimelineMax({
       onUpdate: () => {
         this.currentFrame = Math.round(this.state.data.progress * this.trackLength);
@@ -674,7 +675,7 @@ class VTPlayerFinal extends React.Component {
     if (_vesselData['aisPosition'].rot === 360) vessel.alpha = .3;
     vessel.children[1].rotation = _vesselData['aisPosition'].rot * 0.0174533;
 
-    let position = VTPlayerFinalUtils.cartesianFromLatLong(_vesselData['aisPosition'].lat, _vesselData['aisPosition'].lon);
+    let position = VTPlayerFinalUtils.cartesianFromLatLong(_vesselData['aisPosition'].x, _vesselData['aisPosition'].y);
     vessel.x = position[0];
     vessel.y = position[1];
     this.staticVesselLayer.addChild(vessel);
@@ -734,8 +735,8 @@ class VTPlayerFinal extends React.Component {
       let pointColor = 0x000000;
       let currentTrackPoint = _vesselData['trackData'][i];
       let nextTrackPoint = _vesselData['trackData'][i + 1];
-      let currentPosition = VTPlayerFinalUtils.cartesianFromLatLong(currentTrackPoint.lat, currentTrackPoint.lon);
-      parsedTrack[i] = {x: currentPosition[0], y: currentPosition[1], status: _vesselData['trackData'].status};
+      let currentPosition = VTPlayerFinalUtils.cartesianFromLatLong(currentTrackPoint.x, currentTrackPoint.y);
+      parsedTrack[i] = {x: currentPosition[0], y: currentPosition[1], status: '*'};
 
       // plot points
       VTPlayerFinalUtils.plotPoint(this.pathLayer, new Vector2(currentPosition[0], currentPosition[1]), pointColor, 1);
@@ -743,8 +744,8 @@ class VTPlayerFinal extends React.Component {
       // plot path
       if (i < _vesselData['trackData'].length - 1) {
         VTPlayerFinalUtils.plotLine(this.pathLayer,
-          VTPlayerFinalUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon),
-          VTPlayerFinalUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon),
+          VTPlayerFinalUtils.getVectorFromGeoPoint(currentTrackPoint.x, currentTrackPoint.y),
+          VTPlayerFinalUtils.getVectorFromGeoPoint(nextTrackPoint.x, nextTrackPoint.y),
           0x295b29, 1, 1, PIXI.BLEND_MODES.NORMAL
         );
       }
