@@ -368,6 +368,7 @@ class VTPlayerFinal extends React.Component {
   }
 
   init(appdata) {
+    console.log('appdata: ',appdata.meta);
 
     this.range = {
       start: 0,
