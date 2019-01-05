@@ -88,12 +88,27 @@ class VTPlayerFinal extends React.Component {
   }
 
   updateDebug() {
+
+
     for (let i = 0; i < this.vesselLayer.children.length; i++) {
-      if (this.vesselLayer.children[i].data.trackData[this.currentFrame]) {
-        const data = this.vesselLayer.children[i].data.trackData[this.currentFrame];
-        this.vesselLayer.children[i].x = this.vesselLayer.children[i].parsedTrack[this.currentFrame].x;
-        this.vesselLayer.children[i].y = this.vesselLayer.children[i].parsedTrack[this.currentFrame].y;
+
+      // console.log(i, this.progress, this.vesselLayer.children[i].data.trackData[0].t);
+      // let vessel = this.vesselLayer.children[i];
+      // let parsedTrack = vessel.parsedTrack;
+
+      // for (let j = 0; j < parsedTrack.length; j++) {
+      //   if (this.progress >= parsedTrack[j].t) {
+      //     vessel.x = vessel.parsedTrack[j].x;
+      //     vessel.y = vessel.parsedTrack[j].y;
+      //     vessel.children[1].rotation = vessel.parsedTrack[j].r * 0.0174533;
+      //   }
+      // }
+      if (this.vesselLayer.children[i].parsedTrack[this.currentFrame] != null) {
+        const data = this.vesselLayer.children[i].parsedTrack[this.currentFrame];
+        this.vesselLayer.children[i].x = data.x;
+        this.vesselLayer.children[i].y = data.y;
         this.vesselLayer.children[i].children[1].rotation = data.r * 0.0174533;
+
         // this.vesselLayer.children[i].children[2].visible = data.status == 'static' ? true : false;
         // this.vesselLayer.children[i].children[3].visible = data.status == 'moored' ? true : false;
         // this.vesselLayer.children[i].children[4].visible = data.status === 'waiting' ? true : false;
@@ -106,7 +121,8 @@ class VTPlayerFinal extends React.Component {
         frame: this.currentFrame,
         t: this.progress
       }
-    })
+    });
+
   }
 
   componentDidMount() {
@@ -188,8 +204,8 @@ class VTPlayerFinal extends React.Component {
     this.range = {
       start: 0,
       end: appdata.vesselPool.length,
-      // start: 44,
-      // end:45,
+      // start: 0,
+      // end: 1,
       _count: 0
     };
 
@@ -224,201 +240,9 @@ class VTPlayerFinal extends React.Component {
 
   }
 
-  // ——————————————————————————————————————————————————
-  // test optimize ...
-  // ——————————————————————————————————————————————————
-
-  // getRotation(aisPosition) {
-  //   let rotation = 0;
-  //   if (aisPosition['hdg'] !== 511) {
-  //     rotation = aisPosition['hdg']
-  //   } else {
-  //     if (aisPosition['cog'] === 0 || aisPosition['cog'] === 360) {
-  //       rotation = 360;
-  //     } else {
-  //       rotation = aisPosition['cog'];
-  //     }
-  //   }
-  //   return rotation
-  // }
-  //
-  // getDistance(trackPoint_1, trackPoint_2) {
-  //   const v1 = new Vector2(trackPoint_1['lat'], trackPoint_1['lon']);
-  //   const v2 = new Vector2(trackPoint_2['lat'], trackPoint_2['lon']);
-  //   return Vector2.getDistance(v1, v2);
-  // }
-  //
-  // optimizeTrackData(_vesselData) {
-  //   // console.log('optimize', _vesselData['mmsi'])
-  //
-  //   let intersected = [];
-  //   for (let i = 0; i < _vesselData['trackData'].length - 1; i++) {
-  //
-  //     const currentTrackPoint = _vesselData['trackData'][i];
-  //     const nextTrackPoint = _vesselData['trackData'][i + 1];
-  //
-  //     // debug!
-  //     // console.log(this.getDistance(currentTrackPoint, nextTrackPoint) > 0.01, i)
-  //
-  //     // check for intersections
-  //     for (let b = 0; b < this.collisionBounds.length; b++) {
-  //       if (VTPlayerFinalUtils.isInBounds(currentTrackPoint, this.collisionBounds[b])) {
-  //         const collisionBounds = this.collisionBounds[b];
-  //         const line_start = VTPlayerFinalUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon);
-  //         const line_end = VTPlayerFinalUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon);
-  //         const intersecting = VTPlayerFinalUtils.lineIntersecting(collisionBounds.collisionLineStart, collisionBounds.collisionLineEnd, line_start, line_end);
-  //         if (intersecting) {
-  //           // console.log('intersected', _vesselData['mmsi'], Vector2.getDistance(collisionBounds.collisionLineStart, intersecting));
-  //           intersected.push({
-  //             index: i,
-  //             intersecting: intersecting,
-  //             type: collisionBounds.type || 1,
-  //             bounds: collisionBounds,
-  //             crossDistance: Vector2.getDistance(collisionBounds.collisionLineStart, intersecting)
-  //           });
-  //         }
-  //       }
-  //     }
-  //
-  //   }
-  //
-  //   // handle intersected
-  //   // maybe offset points parallel to intersecting trackLine ...
-  //   let minDistance = 5; // = 15m (4K projected 1m = .333px)
-  //   if (intersected.length > 0) {
-  //     let io = {};
-  //     for (let j = 0; j < intersected.length; j++) {
-  //       io = intersected[j];
-  //       const v1 = VTPlayerFinalUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
-  //       const v2 = VTPlayerFinalUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
-  //       VTPlayerFinalUtils.plotPoint(this.boundsLayer, v1, 0xffffff);
-  //       VTPlayerFinalUtils.plotPoint(this.boundsLayer, v2, 0xffffff);
-  //
-  //
-  //       // console.log('=>', io);
-  //       const lineIntersectStart = Vector2.subtract(io.bounds.collisionLineStart, io.intersecting)
-  //       let collision_dir = new Vector2();
-  //
-  //       // ——————————————————————————————————————————————————
-  //       // offset points 90° =>  to origin line
-  //       // ——————————————————————————————————————————————————
-  //
-  //       if (io.type === 1) {
-  //         collision_dir = lineIntersectStart.normalize();
-  //       }
-  //
-  //       // ——————————————————————————————————————————————————
-  //       // offset points => cross line direction
-  //       // ——————————————————————————————————————————————————
-  //
-  //       // if (io.type === 2) {
-  //       //   collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
-  //       // }
-  //       //
-  //       // if (io.type === 3) {
-  //       //   const line_dir = Vector2.subtract(v1, v2).normalize();
-  //       //   // cross-product
-  //       //   collision_dir = new Vector2(-line_dir.y, line_dir.x);
-  //       //   if (Vector2.getAngleRAD(line_dir) < 0) collision_dir.negate();
-  //       // }
-  //
-  //       // ——————————————————————————————————————————————————
-  //       // do nothing!
-  //       // ——————————————————————————————————————————————————
-  //
-  //       if (io.type === 0) {
-  //         console.log('spdm')
-  //         return
-  //       }
-  //
-  //
-  //       const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
-  //       const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
-  //
-  //       VTPlayerFinalUtils.plotPoint(this.boundsLayer, v1_new, 0x00ff00);
-  //       VTPlayerFinalUtils.plotPoint(this.boundsLayer, v2_new, 0x00ff00);
-  //
-  //       // convert back from cartesian to lat/long
-  //       const newGeoPoint1 = VTPlayerFinalUtils.geoFromCartesian(v1_new.x, v1_new.y);
-  //       const newGeoPoint2 = VTPlayerFinalUtils.geoFromCartesian(v2_new.x, v2_new.y);
-  //
-  //       // overwrite old geo-coordinates
-  //       _vesselData['trackData'][io.index].lat = newGeoPoint1[0];
-  //       _vesselData['trackData'][io.index].lon = newGeoPoint1[1];
-  //       _vesselData['trackData'][io.index + 1].lat = newGeoPoint2[0];
-  //       _vesselData['trackData'][io.index + 1].lon = newGeoPoint2[1];
-  //     }
-  //   }
-  // }
-  //
-  // correctRotationTrackData(_vesselData) {
-  //
-  //   // console.log('=== correctRotationTrackData ===', _vesselData['mmsi']);
-  //
-  //   let startReplace = 0;
-  //   let endReplace = 0;
-  //   let setAtStart = false;
-  //   let lastValidRotation = 0;
-  //   let _tempRotationBeforeMoored = 0;
-  //
-  //   for (let i = 0; i < _vesselData['trackData'].length; i++) {
-  //
-  //     const currentTrackPoint = _vesselData['trackData'][i];
-  //     const currentRotation = this.getRotation(currentTrackPoint);
-  //     const nextTrackPoint = (i < _vesselData['trackData'].length - 1) ? _vesselData['trackData'][i + 1] : null;
-  //     const nextRotation = nextTrackPoint != null ? this.getRotation(nextTrackPoint) : null;
-  //
-  //     if (currentRotation !== 360) {
-  //       lastValidRotation = currentRotation;
-  //     }
-  //     _vesselData['trackData'][i]['rot'] = lastValidRotation;
-  //
-  //
-  //     if (nextRotation != null) {
-  //
-  //       // if rotation at start == zero => fill with next valid value
-  //       if (currentRotation === 360 && nextRotation === 360 && !setAtStart && i === 0) {
-  //         setAtStart = true;
-  //         startReplace = i;
-  //       }
-  //
-  //       if (nextRotation !== 360 && setAtStart) {
-  //         endReplace = i;
-  //         for (let j = startReplace; j < endReplace + 1; j++) {
-  //           _vesselData['trackData'][j]['rot'] = nextRotation;
-  //         }
-  //         setAtStart = false;
-  //       }
-  //
-  //       // if next zero => replace with latest valid
-  //       if (nextRotation === 360) _vesselData['trackData'][i + 1]['rot'] = lastValidRotation;
-  //
-  //
-  //       if (currentTrackPoint['status'] !== 'moored' && nextTrackPoint['status'] === 'moored') {
-  //         _tempRotationBeforeMoored = currentRotation;
-  //       }
-  //
-  //       if (currentTrackPoint['status'] === 'moored' && nextTrackPoint['status'] === 'moored') {
-  //         if (_tempRotationBeforeMoored !== 0) _vesselData['trackData'][i]['rot'] = _tempRotationBeforeMoored;
-  //
-  //       }
-  //
-  //       if (currentTrackPoint['status'] === 'moored' && nextTrackPoint['status'] !== 'moored') {
-  //         _tempRotationBeforeMoored = 0;
-  //         _vesselData['trackData'][i]['rot'] = currentRotation;
-  //       }
-  //
-  //     }
-  //
-  //
-  //   }
-  //
-  // }
 
   parseTrackData(_data) {
     let validCounter = 0;
-
-
     console.log('_data:', _data.vesselPool);
 
     for (let i = 0; i < _data.vesselPool.length; i++) {
@@ -484,31 +308,39 @@ class VTPlayerFinal extends React.Component {
 
     // parse Track
     let parsedTrack = [];
-    for (let i = 0; i < _vesselData['trackData'].length; i++) {
-      let pointColor = 0x000000;
-      let currentTrackPoint = _vesselData['trackData'][i];
-      let nextTrackPoint = _vesselData['trackData'][i + 1];
-      let currentPosition = VTPlayerFinalUtils.cartesianFromLatLong(currentTrackPoint.x, currentTrackPoint.y);
-      parsedTrack[i] = {x: currentPosition[0], y: currentPosition[1], status: '*'};
+    for (let c = 0; c < this.trackLength; c++) {
+      parsedTrack[c] = null;
+    }
 
-      // plot points
-      VTPlayerFinalUtils.plotPoint(this.pathLayer, new Vector2(currentPosition[0], currentPosition[1]), pointColor, 1);
+    if (_vesselData['trackData'].length > 1) {
 
-      // plot path
-      if (i < _vesselData['trackData'].length - 1) {
-        VTPlayerFinalUtils.plotLine(this.pathLayer,
-          VTPlayerFinalUtils.getVectorFromGeoPoint(currentTrackPoint.x, currentTrackPoint.y),
-          VTPlayerFinalUtils.getVectorFromGeoPoint(nextTrackPoint.x, nextTrackPoint.y),
-          0x295b29, 1, 1, PIXI.BLEND_MODES.NORMAL
-        );
+      for (let i = 0; i < _vesselData['trackData'].length; i++) {
+        let currentTrackPoint = _vesselData['trackData'][i];
+        let currentPosition = VTPlayerFinalUtils.cartesianFromLatLong(currentTrackPoint.x, currentTrackPoint.y);
+        let frame = parseInt(_vesselData['trackData'][i].t * this.trackLength)
+        parsedTrack[frame] = {x: currentPosition[0], y: currentPosition[1], r: currentTrackPoint.r, t: currentTrackPoint.t};
+
+        if (i === _vesselData['trackData'].length-1) {
+          console.log(currentTrackPoint.t)
+        }
+
+        if (i === 0) {
+          vessel.x = parsedTrack[frame].x;
+          vessel.y = parsedTrack[frame].y;
+        }
+
       }
 
+    } else {
+      let currentTrackPoint = _vesselData['trackData'][0];
+      let currentPosition = VTPlayerFinalUtils.cartesianFromLatLong(currentTrackPoint.x, currentTrackPoint.y);
+      vessel.x = currentPosition[0];
+      vessel.y = currentPosition[1];
     }
+
 
     vessel.parsedTrack = parsedTrack;
 
-    vessel.x = parsedTrack[0].x;
-    vessel.y = parsedTrack[0].y;
 
   }
 
@@ -598,3 +430,193 @@ function mapStateToProps(state) {
 
 export default connect(mapStateToProps, {})(VTPlayerFinal);
 
+// ——————————————————————————————————————————————————
+// test optimize ...
+// ——————————————————————————————————————————————————
+
+// getRotation(aisPosition) {
+//   let rotation = 0;
+//   if (aisPosition['hdg'] !== 511) {
+//     rotation = aisPosition['hdg']
+//   } else {
+//     if (aisPosition['cog'] === 0 || aisPosition['cog'] === 360) {
+//       rotation = 360;
+//     } else {
+//       rotation = aisPosition['cog'];
+//     }
+//   }
+//   return rotation
+// }
+//
+// getDistance(trackPoint_1, trackPoint_2) {
+//   const v1 = new Vector2(trackPoint_1['lat'], trackPoint_1['lon']);
+//   const v2 = new Vector2(trackPoint_2['lat'], trackPoint_2['lon']);
+//   return Vector2.getDistance(v1, v2);
+// }
+//
+// optimizeTrackData(_vesselData) {
+//   // console.log('optimize', _vesselData['mmsi'])
+//
+//   let intersected = [];
+//   for (let i = 0; i < _vesselData['trackData'].length - 1; i++) {
+//
+//     const currentTrackPoint = _vesselData['trackData'][i];
+//     const nextTrackPoint = _vesselData['trackData'][i + 1];
+//
+//     // debug!
+//     // console.log(this.getDistance(currentTrackPoint, nextTrackPoint) > 0.01, i)
+//
+//     // check for intersections
+//     for (let b = 0; b < this.collisionBounds.length; b++) {
+//       if (VTPlayerFinalUtils.isInBounds(currentTrackPoint, this.collisionBounds[b])) {
+//         const collisionBounds = this.collisionBounds[b];
+//         const line_start = VTPlayerFinalUtils.getVectorFromGeoPoint(currentTrackPoint.lat, currentTrackPoint.lon);
+//         const line_end = VTPlayerFinalUtils.getVectorFromGeoPoint(nextTrackPoint.lat, nextTrackPoint.lon);
+//         const intersecting = VTPlayerFinalUtils.lineIntersecting(collisionBounds.collisionLineStart, collisionBounds.collisionLineEnd, line_start, line_end);
+//         if (intersecting) {
+//           // console.log('intersected', _vesselData['mmsi'], Vector2.getDistance(collisionBounds.collisionLineStart, intersecting));
+//           intersected.push({
+//             index: i,
+//             intersecting: intersecting,
+//             type: collisionBounds.type || 1,
+//             bounds: collisionBounds,
+//             crossDistance: Vector2.getDistance(collisionBounds.collisionLineStart, intersecting)
+//           });
+//         }
+//       }
+//     }
+//
+//   }
+//
+//   // handle intersected
+//   // maybe offset points parallel to intersecting trackLine ...
+//   let minDistance = 5; // = 15m (4K projected 1m = .333px)
+//   if (intersected.length > 0) {
+//     let io = {};
+//     for (let j = 0; j < intersected.length; j++) {
+//       io = intersected[j];
+//       const v1 = VTPlayerFinalUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index].lat, _vesselData['trackData'][io.index].lon);
+//       const v2 = VTPlayerFinalUtils.getVectorFromGeoPoint(_vesselData['trackData'][io.index + 1].lat, _vesselData['trackData'][io.index + 1].lon);
+//       VTPlayerFinalUtils.plotPoint(this.boundsLayer, v1, 0xffffff);
+//       VTPlayerFinalUtils.plotPoint(this.boundsLayer, v2, 0xffffff);
+//
+//
+//       // console.log('=>', io);
+//       const lineIntersectStart = Vector2.subtract(io.bounds.collisionLineStart, io.intersecting)
+//       let collision_dir = new Vector2();
+//
+//       // ——————————————————————————————————————————————————
+//       // offset points 90° =>  to origin line
+//       // ——————————————————————————————————————————————————
+//
+//       if (io.type === 1) {
+//         collision_dir = lineIntersectStart.normalize();
+//       }
+//
+//       // ——————————————————————————————————————————————————
+//       // offset points => cross line direction
+//       // ——————————————————————————————————————————————————
+//
+//       // if (io.type === 2) {
+//       //   collision_dir = Vector2.subtract(io.bounds.collisionLineStart, io.bounds.collisionLineEnd).normalize();
+//       // }
+//       //
+//       // if (io.type === 3) {
+//       //   const line_dir = Vector2.subtract(v1, v2).normalize();
+//       //   // cross-product
+//       //   collision_dir = new Vector2(-line_dir.y, line_dir.x);
+//       //   if (Vector2.getAngleRAD(line_dir) < 0) collision_dir.negate();
+//       // }
+//
+//       // ——————————————————————————————————————————————————
+//       // do nothing!
+//       // ——————————————————————————————————————————————————
+//
+//       if (io.type === 0) {
+//         console.log('spdm')
+//         return
+//       }
+//
+//
+//       const v1_new = v1.add(collision_dir.multiplyScalar(io.crossDistance + minDistance));
+//       const v2_new = v2.add(collision_dir.normalize().multiplyScalar(io.crossDistance + minDistance));
+//
+//       VTPlayerFinalUtils.plotPoint(this.boundsLayer, v1_new, 0x00ff00);
+//       VTPlayerFinalUtils.plotPoint(this.boundsLayer, v2_new, 0x00ff00);
+//
+//       // convert back from cartesian to lat/long
+//       const newGeoPoint1 = VTPlayerFinalUtils.geoFromCartesian(v1_new.x, v1_new.y);
+//       const newGeoPoint2 = VTPlayerFinalUtils.geoFromCartesian(v2_new.x, v2_new.y);
+//
+//       // overwrite old geo-coordinates
+//       _vesselData['trackData'][io.index].lat = newGeoPoint1[0];
+//       _vesselData['trackData'][io.index].lon = newGeoPoint1[1];
+//       _vesselData['trackData'][io.index + 1].lat = newGeoPoint2[0];
+//       _vesselData['trackData'][io.index + 1].lon = newGeoPoint2[1];
+//     }
+//   }
+// }
+//
+// correctRotationTrackData(_vesselData) {
+//
+//   // console.log('=== correctRotationTrackData ===', _vesselData['mmsi']);
+//
+//   let startReplace = 0;
+//   let endReplace = 0;
+//   let setAtStart = false;
+//   let lastValidRotation = 0;
+//   let _tempRotationBeforeMoored = 0;
+//
+//   for (let i = 0; i < _vesselData['trackData'].length; i++) {
+//
+//     const currentTrackPoint = _vesselData['trackData'][i];
+//     const currentRotation = this.getRotation(currentTrackPoint);
+//     const nextTrackPoint = (i < _vesselData['trackData'].length - 1) ? _vesselData['trackData'][i + 1] : null;
+//     const nextRotation = nextTrackPoint != null ? this.getRotation(nextTrackPoint) : null;
+//
+//     if (currentRotation !== 360) {
+//       lastValidRotation = currentRotation;
+//     }
+//     _vesselData['trackData'][i]['rot'] = lastValidRotation;
+//
+//
+//     if (nextRotation != null) {
+//
+//       // if rotation at start == zero => fill with next valid value
+//       if (currentRotation === 360 && nextRotation === 360 && !setAtStart && i === 0) {
+//         setAtStart = true;
+//         startReplace = i;
+//       }
+//
+//       if (nextRotation !== 360 && setAtStart) {
+//         endReplace = i;
+//         for (let j = startReplace; j < endReplace + 1; j++) {
+//           _vesselData['trackData'][j]['rot'] = nextRotation;
+//         }
+//         setAtStart = false;
+//       }
+//
+//       // if next zero => replace with latest valid
+//       if (nextRotation === 360) _vesselData['trackData'][i + 1]['rot'] = lastValidRotation;
+//
+//
+//       if (currentTrackPoint['status'] !== 'moored' && nextTrackPoint['status'] === 'moored') {
+//         _tempRotationBeforeMoored = currentRotation;
+//       }
+//
+//       if (currentTrackPoint['status'] === 'moored' && nextTrackPoint['status'] === 'moored') {
+//         if (_tempRotationBeforeMoored !== 0) _vesselData['trackData'][i]['rot'] = _tempRotationBeforeMoored;
+//
+//       }
+//
+//       if (currentTrackPoint['status'] === 'moored' && nextTrackPoint['status'] !== 'moored') {
+//         _tempRotationBeforeMoored = 0;
+//         _vesselData['trackData'][i]['rot'] = currentRotation;
+//       }
+//
+//     }
+//
+//
+//   }
+//
+// }
