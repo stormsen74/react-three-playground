@@ -93,19 +93,22 @@ class VTPlayerFinal extends React.Component {
 
   updateDebug() {
     for (let i = 0; i < this.vesselLayer.children.length; i++) {
-      const data = this.vesselLayer.children[i].data.trackData[this.currentFrame];
-      this.vesselLayer.children[i].x = this.vesselLayer.children[i].parsedTrack[this.currentFrame].x;
-      this.vesselLayer.children[i].y = this.vesselLayer.children[i].parsedTrack[this.currentFrame].y;
-      // this.vesselLayer.children[i].children[1].rotation = data.cog * 0.0174533;
-      // this.vesselLayer.children[i].children[2].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
-      // this.vesselLayer.children[i].children[3].rotation = data.rot * 0.0174533;
-      // this.vesselLayer.children[i].children[4].visible = data.status == 'static' ? true : false;
-      // this.vesselLayer.children[i].children[5].visible = data.status == 'moored' ? true : false;
-      // this.vesselLayer.children[i].children[6].visible = data.status == 'waiting' ? true : false;
-      this.vesselLayer.children[i].children[1].rotation = data.r * 0.0174533;
-      this.vesselLayer.children[i].children[2].visible = data.status == 'static' ? true : false;
-      this.vesselLayer.children[i].children[3].visible = data.status == 'moored' ? true : false;
-      this.vesselLayer.children[i].children[4].visible = data.status == 'waiting' ? true : false;
+      const parsedFrame = this.vesselLayer.children[i].parsedTrack[this.currentFrame];
+      if(parsedFrame) {
+        this.vesselLayer.children[i].x = parsedFrame.x;
+        this.vesselLayer.children[i].y = parsedFrame.y;
+        // this.vesselLayer.children[i].children[1].rotation = data.cog * 0.0174533;
+        // this.vesselLayer.children[i].children[2].rotation = data.hdg !== 511 ? data.hdg * 0.0174533 : 0;
+        // this.vesselLayer.children[i].children[3].rotation = data.rot * 0.0174533;
+        // this.vesselLayer.children[i].children[4].visible = data.status == 'static' ? true : false;
+        // this.vesselLayer.children[i].children[5].visible = data.status == 'moored' ? true : false;
+        // this.vesselLayer.children[i].children[6].visible = data.status == 'waiting' ? true : false;
+
+        this.vesselLayer.children[i].children[1].rotation = parsedFrame.r * 0.0174533;
+        // this.vesselLayer.children[i].children[2].visible = data.status == 'static' ? true : false;
+        // this.vesselLayer.children[i].children[3].visible = data.status == 'moored' ? true : false;
+        // this.vesselLayer.children[i].children[4].visible = data.status == 'waiting' ? true : false;
+      }
     }
 
     this.setState({
@@ -139,7 +142,7 @@ class VTPlayerFinal extends React.Component {
     let sprite = new PIXI.Sprite(PIXI.loader.resources[this.mapImage].texture);
     this.mapLayer.addChild(sprite);
     this.mapLayer.on('click', (e) => {
-      if(this.shiftIsDown) {
+      if (this.shiftIsDown) {
         const point = this.app.renderer.plugins.interaction.mouse.global;
         console.log(VTPlayerFinalUtils.geoFromCartesian(point.x, point.y))
       }
@@ -154,191 +157,24 @@ class VTPlayerFinal extends React.Component {
     this.app.stage.addChild(this.staticVesselLayer);
     this.app.stage.addChild(this.vesselLayer);
 
-    this.collisionBounds = [
-      {
-        index: 0,
-        minLong: 9.949696544325088,
-        maxLong: 9.954310934570312,
-        minLat: 53.54292959464058,
-        maxLat: 53.53728326430859,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.540694, 9.951064),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.540894, 9.954155)
-      },
-      {
-        index: 1,
-        minLong: 9.951390,
-        maxLong: 9.955178025806568,
-        minLat: 53.539734,
-        maxLat: 53.53755770742224,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.538943, 9.952549),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.538745, 9.954598)
-      },
-      {
-        index: 2,
-        minLong: 9.932996296296295,
-        maxLong: 9.939025925925925,
-        minLat: 53.54105922150139,
-        maxLat: 53.536557275254864,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53964556655106, 9.934604198088469),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.539254092964406, 9.937783457347729)
-      },
-      {
-        index: 3,
-        minLong: 9.966835310872396,
-        maxLong: 9.9716590145761,
-        minLat: 53.5259657392189,
-        maxLat: 53.52300793812268,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.52502303119297, 9.970970136796875),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.52376913809082, 9.968077777777777)
-      },
-      {
-        index: 4,
-        minLong: 9.955506914695457,
-        maxLong: 9.961207655436198,
-        minLat: 53.52716190917516,
-        maxLat: 53.52398662208932,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.526096230414446, 9.95748024802879),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.52466082726338, 9.957516792353877)
-      },
-      {
-        index: 5,
-        minLong: 9.96731037037037,
-        maxLong: 9.97059925925926,
-        minLat: 53.54338631382501,
-        maxLat: 53.54064599871843,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.54214904385088, 9.969065072851564),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.54060741132903, 9.967768003710939)
-      },
-      {
-        index: 6,
-        minLong: 9.953277777777778,
-        maxLong: 9.958064940502025,
-        minLat: 53.53288177258312,
-        maxLat: 53.5291410243136,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53179434661724, 9.955214570131655),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53061992585727, 9.957991851851851)
-      },
-      {
-        index: 7,
-        minLong: 9.952912347909432,
-        maxLong: 9.958868888888889,
-        minLat: 53.53629629286376,
-        maxLat: 53.53242505339869,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53504307901618, 9.955608003710939),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53395911839082, 9.958202134570312)
-      },
-      {
-        index: 8,
-        minLong: 9.876089708398439,
-        maxLong: 9.88317493828125,
-        minLat: 53.54192619575445,
-        maxLat: 53.53745188114098,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.540222003474234, 9.878594669140625),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.539733170097705, 9.883069548398439)
-      },
-      {
-        index: 9,
-        minLong: 9.902533656796876,
-        maxLong: 9.909359469140625,
-        minLat: 53.54138637469586,
-        maxLat: 53.53569345649406,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53942952046267, 9.90503051359375),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53926082725061, 9.90996747359375),
-      },
-      {
-        index: 10,
-        minLong: 9.973920960000001,
-        maxLong: 9.978995745703125,
-        minLat: 53.54142011302939,
-        maxLat: 53.53605477559985,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53892343773761, 9.97823371359375),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53663288793337, 9.976117872851564),
-      },
-      {
-        index: 11,
-        minLong: 9.996789872851563,
-        maxLong: 10.003518411132813,
-        minLat: 53.5420286045165,
-        maxLat: 53.537572320475356,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53913804284887, 10.001734934570313),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.54125778770425, 9.998816534570313),
-      },
-      {
-        index: 12,
-        minLong: 9.981752003710938,
-        maxLong: 9.987791472851564,
-        minLat: 53.54231766068327,
-        maxLat: 53.539692066433396,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.541498667475665, 9.982805872851563),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.54171545960074, 9.987142934570313),
-      },
-      {
-        index: 13,
-        minLong: 9.938948803710938,
-        maxLong: 9.947014934570314,
-        minLat: 53.516061723697845,
-        maxLat: 53.51300254740315,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.51521864394656, 9.942150934570313),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.512833930570764, 9.943083203710938),
-      },
-      {
-        index: 14,
-        minLong: 9.952568003710939,
-        maxLong: 9.958891203710937,
-        minLat: 53.5060411084465,
-        maxLat: 53.50233155577659,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.504884883779454, 9.955081072851563),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.50411407027518, 9.959377603710939),
-      },
-      {
-        index: 15,
-        minLong: 9.976847472851563,
-        maxLong: 9.980819734570312,
-        minLat: 53.540366531557616,
-        maxLat: 53.535693455391396,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53906577880718, 9.979522672851562),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.5366088013897, 9.977739203710938),
-      },
-      {
-        index: 16,
-        minLong: 9.990628811132813,
-        maxLong: 9.997803211132814,
-        minLat: 53.536536537348006,
-        maxLat: 53.53270654313839,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53480220034742, 9.992858134570312),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.53316421393222, 9.995817072851564),
-      },
-      {
-        index: 17,
-        minLong: 9.974699203710937,
-        maxLong: 9.982522134570313,
-        minLat: 53.52617869063722,
-        maxLat: 53.5239625940938,
-        collisionLineStart: VTPlayerFinalUtils.getVectorFromGeoPoint(53.525431961471305, 9.979076803710939),
-        collisionLineEnd: VTPlayerFinalUtils.getVectorFromGeoPoint(53.52427573680425, 9.979522672851562),
-      }
-    ];
 
-
-
-
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[1], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[2], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[3], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[4], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[5], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[6], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[7], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[8], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[9], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[10], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[11], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[12], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[13], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[14], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[15], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[16], this.boundsLayer);
-    VTPlayerFinalUtils.plotCollisionBounds(this.collisionBounds[17], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[1], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[2], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[3], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[4], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[5], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[6], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[7], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[8], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[9], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[10], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[11], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[12], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[13], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[14], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[15], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[16], this.boundsLayer);
+    VTPlayerFinalUtils.plotCollisionBounds(VTPlayerFinalUtils.collisionBounds[17], this.boundsLayer);
 
     this.loadDataFromAPI(this);
 
@@ -351,7 +187,7 @@ class VTPlayerFinal extends React.Component {
 
 
   loadDataFromAPI(_this) {
-    const url = 'http://db.dumont.dmdr.io/v1/appdata/?day=0';
+    const url = 'http://db.dumont.dmdr.io/v1/appdata/?day=-1';
     axios.get(url, {
       responseType: 'json',
       headers: {
@@ -735,12 +571,13 @@ class VTPlayerFinal extends React.Component {
       let currentTrackPoint = _vesselData['trackData'][i];
       let nextTrackPoint = _vesselData['trackData'][i + 1];
       let currentPosition = VTPlayerFinalUtils.cartesianFromLatLong(currentTrackPoint.x, currentTrackPoint.y);
-      parsedTrack[i] = {x: currentPosition[0], y: currentPosition[1], status: '*'};
+      parsedTrack[i] = {x: currentPosition[0], y: currentPosition[1], r: currentTrackPoint.r || undefined};
 
       // plot points
       VTPlayerFinalUtils.plotPoint(this.pathLayer, new Vector2(currentPosition[0], currentPosition[1]), pointColor, 1);
 
       // plot path
+
       if (i < _vesselData['trackData'].length - 1) {
         VTPlayerFinalUtils.plotLine(this.pathLayer,
           VTPlayerFinalUtils.getVectorFromGeoPoint(currentTrackPoint.x, currentTrackPoint.y),
