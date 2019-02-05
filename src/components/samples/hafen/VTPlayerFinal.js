@@ -94,7 +94,7 @@ class VTPlayerFinal extends React.Component {
   updateDebug() {
     for (let i = 0; i < this.vesselLayer.children.length; i++) {
       const parsedFrame = this.vesselLayer.children[i].parsedTrack[this.currentFrame];
-      if(parsedFrame) {
+      if (parsedFrame) {
         this.vesselLayer.children[i].x = parsedFrame.x;
         this.vesselLayer.children[i].y = parsedFrame.y;
         // this.vesselLayer.children[i].children[1].rotation = data.cog * 0.0174533;
@@ -208,8 +208,8 @@ class VTPlayerFinal extends React.Component {
     this.range = {
       start: 0,
       end: appdata.vesselPool.length,
-      // start: 44,
-      // end:45,
+      // start: 0,
+      // end: 30,
       _count: 0
     };
 
@@ -267,6 +267,10 @@ class VTPlayerFinal extends React.Component {
       paused: true
     });
 
+    let o = {};
+    let trackTween = TweenMax.to(o, this.trackLength, {ease: Power0.easeNone});
+
+    this.vesselTimeline.add(trackTween, '0')
 
   }
 
@@ -566,12 +570,21 @@ class VTPlayerFinal extends React.Component {
 
     // parse Track
     let parsedTrack = [];
+    for (let p = 0; p < 1440; p++) {
+      parsedTrack[p] = undefined;
+    }
+
     for (let i = 0; i < _vesselData['trackData'].length; i++) {
       let pointColor = 0x000000;
       let currentTrackPoint = _vesselData['trackData'][i];
       let nextTrackPoint = _vesselData['trackData'][i + 1];
       let currentPosition = VTPlayerFinalUtils.cartesianFromLatLong(currentTrackPoint.x, currentTrackPoint.y);
-      parsedTrack[i] = {x: currentPosition[0], y: currentPosition[1], r: currentTrackPoint.r || undefined};
+
+      let frame = Math.round(currentTrackPoint.t * 1440)
+      // console.log(frame, i)
+      if (frame >= 0) {
+        parsedTrack[frame] = {x: currentPosition[0], y: currentPosition[1], r: currentTrackPoint.r || undefined};
+      }
 
       // plot points
       VTPlayerFinalUtils.plotPoint(this.pathLayer, new Vector2(currentPosition[0], currentPosition[1]), pointColor, 1);
@@ -590,22 +603,22 @@ class VTPlayerFinal extends React.Component {
 
     vessel.parsedTrack = parsedTrack;
 
-    vessel.x = parsedTrack[0].x;
-    vessel.y = parsedTrack[0].y;
+    // vessel.x = parsedTrack[0].x;
+    // vessel.y = parsedTrack[0].y;
 
-    if (_index === 0) {
-      let trackTween = TweenMax.to(vessel, this.trackLength, {
-        bezier: {
-          curviness: 0,
-          type: 'thru',
-          values: parsedTrack,
-          autoRotate: false
-        },
-        ease: Power0.easeNone
-      });
-
-      this.vesselTimeline.add(trackTween, '0')
-    }
+    // if (_index === 0) {
+    //   let trackTween = TweenMax.to(vessel, this.trackLength, {
+    //     bezier: {
+    //       curviness: 0,
+    //       type: 'thru',
+    //       values: parsedTrack,
+    //       autoRotate: false
+    //     },
+    //     ease: Power0.easeNone
+    //   });
+    //
+    //   this.vesselTimeline.add(trackTween, '0')
+    // }
 
   }
 
