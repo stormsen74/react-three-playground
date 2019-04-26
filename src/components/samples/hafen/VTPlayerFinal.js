@@ -187,7 +187,7 @@ class VTPlayerFinal extends React.Component {
 
 
   loadDataFromAPI(_this) {
-    const url = 'http://db.dumont.dmdr.io/v1/appdata/?day=-1';
+    const url = 'http://db.dumont.dmdr.io/v1/appdata/?day=-16';
     axios.get(url, {
       responseType: 'json',
       headers: {
