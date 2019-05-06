@@ -94,7 +94,7 @@ class Cube extends React.Component {
   render() {
     return (
       <div>
-        <div className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}>
+        <div style={{overflow: 'hidden'}} className={'canvas-wrapper'} id={'canvas-wrapper'} ref={ref => this.canvasWrapper = ref}>
           <canvas ref={ref => this.canvas = ref}/>
         </div>
         <a href={'/'}>

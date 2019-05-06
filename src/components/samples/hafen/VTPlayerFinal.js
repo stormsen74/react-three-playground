@@ -1,7 +1,7 @@
 import React from 'react';
 import connect from "react-redux/es/connect/connect";
 import axios from 'axios';
-import * as PIXI from 'pixi.js'
+import * as PIXI from 'pixi.js';
 import DatGui, {DatBoolean, DatButton, DatNumber} from 'react-dat-gui';
 import 'gsap/TweenMax';
 import 'gsap/TimelineMax';
@@ -38,6 +38,7 @@ class VTPlayerFinal extends React.Component {
   constructor(props) {
     super(props);
 
+    this.loader = new PIXI.Loader();
     this.showLargeMap = true;
     if (!this.showLargeMap) {
       this.mapImage = mapImage;
@@ -46,7 +47,6 @@ class VTPlayerFinal extends React.Component {
       VTPlayerFinalUtils.mapData.size.width = 3500;
       VTPlayerFinalUtils.mapData.size.height = 1530;
     }
-
 
     this.loadReady = this.loadReady.bind(this);
     this.playTimeline = this.playTimeline.bind(this);
@@ -124,7 +124,7 @@ class VTPlayerFinal extends React.Component {
   }
 
   initialLoad() {
-    PIXI.loader.add(this.mapImage).load(this.loadReady);
+    this.loader.add(this.mapImage).load().onComplete.add(this.loadReady);
   }
 
   loadReady() {
@@ -139,7 +139,7 @@ class VTPlayerFinal extends React.Component {
     this.staticVesselLayer = new PIXI.Container();
 
 
-    let sprite = new PIXI.Sprite(PIXI.loader.resources[this.mapImage].texture);
+    let sprite = new PIXI.Sprite(this.loader.resources[this.mapImage].texture);
     this.mapLayer.addChild(sprite);
     this.mapLayer.on('click', (e) => {
       if (this.shiftIsDown) {

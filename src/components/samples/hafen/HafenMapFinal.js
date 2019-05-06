@@ -24,6 +24,7 @@ class HafenMapFinal extends React.Component {
   constructor(props) {
     super(props);
 
+    this.loader = new PIXI.Loader();
     this.loadReady = this.loadReady.bind(this);
     this.onSaveData = this.onSaveData.bind(this);
     this.onStartRecord = this.onStartRecord.bind(this);
@@ -74,13 +75,13 @@ class HafenMapFinal extends React.Component {
   }
 
   initialLoad() {
-    PIXI.loader.add(mapImage).load(this.loadReady);
+    this.loader.add(this.mapImage).load().onComplete.add(this.loadReady);
   }
 
   loadReady() {
     this.initStage();
 
-    let sprite = new PIXI.Sprite(PIXI.loader.resources[mapImage].texture);
+    let sprite = new PIXI.Sprite(this.loader.resources[mapImage].texture);
     this.app.stage.addChild(sprite);
 
     this.collisionLayer = new PIXI.Container();

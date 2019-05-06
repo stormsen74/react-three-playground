@@ -39,6 +39,7 @@ class VTPlayer extends React.Component {
   constructor(props) {
     super(props);
 
+    this.loader = new PIXI.Loader();
     this.loadReady = this.loadReady.bind(this);
     this.playTimeline = this.playTimeline.bind(this);
     this.pauseTimeline = this.pauseTimeline.bind(this);
@@ -103,7 +104,7 @@ class VTPlayer extends React.Component {
   }
 
   initialLoad() {
-    PIXI.loader.add(vesselTrackerRange).load(this.loadReady);
+    this.loader.add(this.mapImage).load().onComplete.add(this.loadReady);
   }
 
   loadReady() {
@@ -126,7 +127,7 @@ class VTPlayer extends React.Component {
     }
 
 
-    let sprite = new PIXI.Sprite(PIXI.loader.resources[vesselTrackerRange].texture);
+    let sprite = new PIXI.Sprite(this.loader.resources[vesselTrackerRange].texture);
     this.mapLayer.addChild(sprite);
     this.mapLayer.on('click', (e) => {
       // its not really accurate for drawing polygons
